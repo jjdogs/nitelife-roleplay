@@ -1,0 +1,26 @@
+# FiveM Cache & Temp
+cache/
+*.cache
+
+# QBox / txAdmin artifacts
+resources/[qb]/.git/
+resources/[qbox]/.git/
+
+# Server dumps & logs
+*.log
+*.dmp
+dumps/
+
+# Node modules (if any resources use them)
+node_modules/
+
+# OS junk
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Credentials — NEVER commit these
+server.cfg.bak
+*.secret
+
+secrets.cfg

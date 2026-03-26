@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "submit": "Submit",
+        "close": "Close"
+    },
+    "alert": {
+        "header": "Alert",
+        "content": "Are you sure?"
+    },
+    "input": {
+        "title": "Input Dialog",
+        "selectOption": "Select an option",
+        "selectOptions": "Select options",
+        "searchPlaceholder": "Search...",
+        "noOptionsFound": "No options found",
+        "toggleOn": "On",
+        "toggleOff": "Off",
+        "selectDate": "Select date...",
+        "selectDates": "Select dates...",
+        "validation": {
+            "required": "%s is required",
+            "minLength": "%s must be at least %s characters",
+            "maxLength": "%s must be no more than %s characters",
+            "minValue": "%s must be at least %s",
+            "maxValue": "%s must be no more than %s",
+            "maxSelections": "%s must have no more than %s selection%s"
+        }
+    },
+    "menu": {
+        "close": "Press %s to close",
+        "select": "Please select an option"
+    },
+    "progressbar": {
+        "title": "Progress",
+        "cancel": "Press %s to cancel"
+    },
+    "skillcheck": {
+        "title": "Skill Check",
+        "instructions": "Instructions",
+        "instructionText": "Hit %s when the %s hits the %s",
+        "redLine": "red line",
+        "greenZone": "green zone",
+        "hint": "Timing is everything..."
+    }
+}

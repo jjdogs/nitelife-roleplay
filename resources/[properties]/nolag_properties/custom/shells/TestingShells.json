@@ -1,0 +1,28 @@
+{
+    "interiors": {
+        "TestShell1": {
+            "imgs": [
+                {
+                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/8JFPLJBEjqL3.webp"
+                }
+            ],
+            "model": "kq_sbx_shell_1",
+            "points": [],
+            "trashLocations": [],
+            "stash": {
+                "slots": 50,
+                "maxweight": 10000
+            },
+            "label": "TestShell1",
+            "doorOffset": {
+                "width": 2.0,
+                "h": 185.54942321777345,
+                "x": 7.97358703613281,
+                "z": 1.00879669189453,
+                "y": 8.5
+            }
+        }
+    },
+    "resourceName": "TestingShells",
+    "creator": "JJ"
+}

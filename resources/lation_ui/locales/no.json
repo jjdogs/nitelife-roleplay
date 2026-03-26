@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Avbryt",
+        "confirm": "Bekreft",
+        "submit": "Send",
+        "close": "Lukk"
+    },
+    "alert": {
+        "header": "Advarsel",
+        "content": "Er du sikker?"
+    },
+    "input": {
+        "title": "Tittel",
+        "selectOption": "Velg et alternativ",
+        "selectOptions": "Velg alternativer",
+        "searchPlaceholder": "Søk...",
+        "noOptionsFound": "Ingen alternativer funnet",
+        "toggleOn": "På",
+        "toggleOff": "Av",
+        "selectDate": "Velg dato...",
+        "selectDates": "Velg datoer...",
+        "validation": {
+            "required": "%s er nødvendig",
+            "minLength": "%s må være minst %s bokstaver",
+            "maxLength": "%s må være under %s bokstaver",
+            "minValue": "%s må være minst %s",
+            "maxValue": "%s må være maks %s",
+            "maxSelections": "%s kan ikke ha mer enn %s valg%s"
+        }
+    },
+    "menu": {
+        "close": "Trykk %s for å lukke",
+        "select": "Velg et alternativ"
+    },
+    "progressbar": {
+        "title": "Fremgang",
+        "cancel": "Trykk %s for å avbryte"
+    },
+    "skillcheck": {
+        "title": "Ferdighetssjekk",
+        "instructions": "Instruksjoner",
+        "instructionText": "Treff %s når %s treffer %s",
+        "redLine": "røde linjen",
+        "greenZone": "grønne linjen",
+        "hint": "Timing er alt..."
+    }
+}

@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Annuller",
+        "confirm": "Bekræft",
+        "submit": "Send",
+        "close": "Luk"
+    },
+    "alert": {
+        "header": "Advarsel",
+        "content": "Er du sikker?"
+    },
+    "input": {
+        "title": "Inputdialog",
+        "selectOption": "Vælg en mulighed",
+        "selectOptions": "Vælg muligheder",
+        "searchPlaceholder": "Søg...",
+        "noOptionsFound": "Ingen muligheder fundet",
+        "toggleOn": "Til",
+        "toggleOff": "Fra",
+        "selectDate": "Vælg dato...",
+        "selectDates": "Vælg datoer...",
+        "validation": {
+            "required": "%s er påkrævet",
+            "minLength": "%s skal have mindst %s tegn",
+            "maxLength": "%s må ikke have mere end %s tegn",
+            "minValue": "%s skal være mindst %s",
+            "maxValue": "%s må ikke være mere end %s",
+            "maxSelections": "%s må ikke have mere end %s valg%s"
+        }
+    },
+    "menu": {
+        "close": "Tryk %s for at lukke",
+        "select": "Vælg venligst en mulighed"
+    },
+    "progressbar": {
+        "title": "Fremskridt",
+        "cancel": "Tryk %s for at annullere"
+    },
+    "skillcheck": {
+        "title": "Færdighedstest",
+        "instructions": "Instruktioner",
+        "instructionText": "Tryk %s når %s rammer %s",
+        "redLine": "rød linje",
+        "greenZone": "grøn zone",
+        "hint": "Timing er alt..."
+    }
+}

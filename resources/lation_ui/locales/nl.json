@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Annuleren",
+        "confirm": "Bevestigen",
+        "submit": "Versturen",
+        "close": "Sluiten"
+    },
+    "alert": {
+        "header": "Waarschuwing",
+        "content": "Weet je het zeker?"
+    },
+    "input": {
+        "title": "Invoerdialoog",
+        "selectOption": "Selecteer een optie",
+        "selectOptions": "Selecteer opties",
+        "searchPlaceholder": "Zoeken...",
+        "noOptionsFound": "Geen opties gevonden",
+        "toggleOn": "Aan",
+        "toggleOff": "Uit",
+        "selectDate": "Selecteer datum...",
+        "selectDates": "Selecteer datums...",
+        "validation": {
+            "required": "%s is vereist",
+            "minLength": "%s moet minimaal %s tekens bevatten",
+            "maxLength": "%s mag niet meer dan %s tekens bevatten",
+            "minValue": "%s moet minimaal %s zijn",
+            "maxValue": "%s mag niet meer dan %s zijn",
+            "maxSelections": "%s mag niet meer dan %s selectie%s hebben"
+        }
+    },
+    "menu": {
+        "close": "Druk op %s om te sluiten",
+        "select": "Selecteer een optie"
+    },
+    "progressbar": {
+        "title": "Voortgang",
+        "cancel": "Druk op %s om te annuleren"
+    },
+    "skillcheck": {
+        "title": "Vaardigheidstest",
+        "instructions": "Instructies",
+        "instructionText": "Druk op %s wanneer %s %s raakt",
+        "redLine": "rode lijn",
+        "greenZone": "groene zone",
+        "hint": "Timing is alles..."
+    }
+}

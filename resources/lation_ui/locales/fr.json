@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "submit": "Soumettre",
+        "close": "Fermer"
+    },
+    "alert": {
+        "header": "Alerte",
+        "content": "Êtes-vous sûr ?"
+    },
+    "input": {
+        "title": "Boîte de dialogue d'entrée",
+        "selectOption": "Sélectionner une option",
+        "selectOptions": "Sélectionner les options",
+        "searchPlaceholder": "Rechercher...",
+        "noOptionsFound": "Aucune option trouvée",
+        "toggleOn": "Activé",
+        "toggleOff": "Désactivé",
+        "selectDate": "Sélectionner la date...",
+        "selectDates": "Sélectionner les dates...",
+        "validation": {
+            "required": "%s est requis",
+            "minLength": "%s doit contenir au moins %s caractères",
+            "maxLength": "%s ne doit pas contenir plus de %s caractères",
+            "minValue": "%s doit être au moins %s",
+            "maxValue": "%s ne doit pas être plus de %s",
+            "maxSelections": "%s ne doit pas avoir plus de %s sélection%s"
+        }
+    },
+    "menu": {
+        "close": "Appuyez sur %s pour fermer",
+        "select": "Veuillez sélectionner une option"
+    },
+    "progressbar": {
+        "title": "Progrès",
+        "cancel": "Appuyez sur %s pour annuler"
+    },
+    "skillcheck": {
+        "title": "Test de compétence",
+        "instructions": "Instructions",
+        "instructionText": "Appuyez sur %s quand %s frappe %s",
+        "redLine": "ligne rouge",
+        "greenZone": "zone verte",
+        "hint": "Le timing est tout..."
+    }
+}

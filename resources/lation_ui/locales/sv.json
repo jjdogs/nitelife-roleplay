@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Avbryt",
+        "confirm": "Bekräfta",
+        "submit": "Skicka",
+        "close": "Stäng"
+    },
+    "alert": {
+        "header": "Varning",
+        "content": "Är du säker?"
+    },
+    "input": {
+        "title": "Inmatningsdialog",
+        "selectOption": "Välj ett alternativ",
+        "selectOptions": "Välj alternativ",
+        "searchPlaceholder": "Sök...",
+        "noOptionsFound": "Inga alternativ hittades",
+        "toggleOn": "På",
+        "toggleOff": "Av",
+        "selectDate": "Välj datum...",
+        "selectDates": "Välj datum...",
+        "validation": {
+            "required": "%s krävs",
+            "minLength": "%s måste ha minst %s tecken",
+            "maxLength": "%s får inte ha mer än %s tecken",
+            "minValue": "%s måste vara minst %s",
+            "maxValue": "%s får inte vara mer än %s",
+            "maxSelections": "%s får inte ha mer än %s val%s"
+        }
+    },
+    "menu": {
+        "close": "Tryck %s för att stänga",
+        "select": "Vänligen välj ett alternativ"
+    },
+    "progressbar": {
+        "title": "Framsteg",
+        "cancel": "Tryck %s för att avbryta"
+    },
+    "skillcheck": {
+        "title": "Färdighetstest",
+        "instructions": "Instruktioner",
+        "instructionText": "Tryck %s när %s träffar %s",
+        "redLine": "röd linje",
+        "greenZone": "grön zon",
+        "hint": "Timing är allt..."
+    }
+}

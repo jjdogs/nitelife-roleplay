@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Anuluj",
+        "confirm": "Potwierdź",
+        "submit": "Wyślij",
+        "close": "Zamknij"
+    },
+    "alert": {
+        "header": "Ostrzeżenie",
+        "content": "Czy jesteś pewien?"
+    },
+    "input": {
+        "title": "Okno dialogowe wprowadzania",
+        "selectOption": "Wybierz opcję",
+        "selectOptions": "Wybierz opcje",
+        "searchPlaceholder": "Szukaj...",
+        "noOptionsFound": "Nie znaleziono opcji",
+        "toggleOn": "Włączone",
+        "toggleOff": "Wyłączone",
+        "selectDate": "Wybierz datę...",
+        "selectDates": "Wybierz daty...",
+        "validation": {
+            "required": "%s jest wymagane",
+            "minLength": "%s musi mieć co najmniej %s znaków",
+            "maxLength": "%s nie może mieć więcej niż %s znaków",
+            "minValue": "%s musi wynosić co najmniej %s",
+            "maxValue": "%s nie może być większe niż %s",
+            "maxSelections": "%s nie może mieć więcej niż %s wybór%s"
+        }
+    },
+    "menu": {
+        "close": "Naciśnij %s, aby zamknąć",
+        "select": "Proszę wybrać opcję"
+    },
+    "progressbar": {
+        "title": "Postęp",
+        "cancel": "Naciśnij %s, aby anulować"
+    },
+    "skillcheck": {
+        "title": "Test umiejętności",
+        "instructions": "Instrukcje",
+        "instructionText": "Naciśnij %s, gdy %s uderzy w %s",
+        "redLine": "czerwona linia",
+        "greenZone": "zielona strefa",
+        "hint": "Wyczucie czasu to wszystko..."
+    }
+}

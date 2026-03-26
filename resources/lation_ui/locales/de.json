@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Abbrechen",
+        "confirm": "Bestätigen",
+        "submit": "Senden",
+        "close": "Schließen"
+    },
+    "alert": {
+        "header": "Warnung",
+        "content": "Sind Sie sicher?"
+    },
+    "input": {
+        "title": "Eingabedialog",
+        "selectOption": "Option auswählen",
+        "selectOptions": "Optionen auswählen",
+        "searchPlaceholder": "Suchen...",
+        "noOptionsFound": "Keine Optionen gefunden",
+        "toggleOn": "Ein",
+        "toggleOff": "Aus",
+        "selectDate": "Datum auswählen...",
+        "selectDates": "Daten auswählen...",
+        "validation": {
+            "required": "%s ist erforderlich",
+            "minLength": "%s muss mindestens %s Zeichen haben",
+            "maxLength": "%s darf nicht mehr als %s Zeichen haben",
+            "minValue": "%s muss mindestens %s sein",
+            "maxValue": "%s darf nicht mehr als %s sein",
+            "maxSelections": "%s darf nicht mehr als %s Auswahl%s haben"
+        }
+    },
+    "menu": {
+        "close": "Drücken Sie %s zum Schließen",
+        "select": "Bitte wählen Sie eine Option"
+    },
+    "progressbar": {
+        "title": "Fortschritt",
+        "cancel": "Drücken Sie %s zum Abbrechen"
+    },
+    "skillcheck": {
+        "title": "Fertigkeitstest",
+        "instructions": "Anweisungen",
+        "instructionText": "Drücken Sie %s, wenn %s %s trifft",
+        "redLine": "rote Linie",
+        "greenZone": "grüne Zone",
+        "hint": "Timing ist alles..."
+    }
+}

@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Zrušit",
+        "confirm": "Potvrdit",
+        "submit": "Odeslat",
+        "close": "Zavřít"
+    },
+    "alert": {
+        "header": "Upozornění",
+        "content": "Jste si jisti?"
+    },
+    "input": {
+        "title": "Vstupní dialog",
+        "selectOption": "Vyberte možnost",
+        "selectOptions": "Vyberte možnosti",
+        "searchPlaceholder": "Hledat...",
+        "noOptionsFound": "Žádné možnosti nenalezeny",
+        "toggleOn": "Zapnuto",
+        "toggleOff": "Vypnuto",
+        "selectDate": "Vyberte datum...",
+        "selectDates": "Vyberte data...",
+        "validation": {
+            "required": "%s je povinné",
+            "minLength": "%s musí mít alespoň %s znaků",
+            "maxLength": "%s nesmí mít více než %s znaků",
+            "minValue": "%s musí být alespoň %s",
+            "maxValue": "%s nesmí být více než %s",
+            "maxSelections": "%s nesmí mít více než %s výběr%s"
+        }
+    },
+    "menu": {
+        "close": "Stiskněte %s pro zavření",
+        "select": "Prosím vyberte možnost"
+    },
+    "progressbar": {
+        "title": "Pokrok",
+        "cancel": "Stiskněte %s pro zrušení"
+    },
+    "skillcheck": {
+        "title": "Test dovedností",
+        "instructions": "Instrukce",
+        "instructionText": "Stiskněte %s, když %s zasáhne %s",
+        "redLine": "červená čára",
+        "greenZone": "zelená zóna",
+        "hint": "Načasování je vše..."
+    }
+}

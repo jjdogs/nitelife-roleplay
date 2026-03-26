@@ -1,0 +1,47 @@
+{
+    "common": {
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "submit": "Enviar",
+        "close": "Cerrar"
+    },
+    "alert": {
+        "header": "Alerta",
+        "content": "¿Estás seguro?"
+    },
+    "input": {
+        "title": "Diálogo de Entrada",
+        "selectOption": "Selecciona una opción",
+        "selectOptions": "Selecciona opciones",
+        "searchPlaceholder": "Buscar...",
+        "noOptionsFound": "No se encontraron opciones",
+        "toggleOn": "Activado",
+        "toggleOff": "Desactivado",
+        "selectDate": "Selecciona fecha...",
+        "selectDates": "Selecciona fechas...",
+        "validation": {
+            "required": "%s es obligatorio",
+            "minLength": "%s debe tener al menos %s caracteres",
+            "maxLength": "%s no debe tener más de %s caracteres",
+            "minValue": "%s debe ser al menos %s",
+            "maxValue": "%s no debe ser más de %s",
+            "maxSelections": "%s no debe tener más de %s selección%s"
+        }
+    },
+    "menu": {
+        "close": "Presiona %s para cerrar",
+        "select": "Por favor, selecciona una opción"
+    },
+    "progressbar": {
+        "title": "Progreso",
+        "cancel": "Presiona %s para cancelar"
+    },
+    "skillcheck": {
+        "title": "Prueba de Habilidad",
+        "instructions": "Instrucciones",
+        "instructionText": "Presiona %s cuando la %s toque la %s",
+        "redLine": "línea roja",
+        "greenZone": "zona verde",
+        "hint": "El tiempo lo es todo..."
+    }
+}

@@ -1,0 +1,524 @@
+{
+  "builder": {
+    "preview": {
+      "exit": "~r~Hold [G] to exit preview"
+    },
+    "levels": {
+      "cant_up": "You can't go up anymore",
+      "cant_down": "You can't go down anymore"
+    }
+  },
+  "keybinds": {
+    "mode_translate": "Sets mode of the gizmo to translation",
+    "mode_rotate": "Sets mode for the gizmo to rotation",
+    "space_toggle": "Gizmo space (local/global) toggle"
+  },
+  "ui": {
+    "new": "Create new shell",
+    "limit_reached": "Prop limit reached!",
+    "limit_close": "{{ percentage }}% of the prop limit reached",
+    "search": "Search for shells",
+    "guide": {
+      "tabs": {
+        "general": "General Information",
+        "video": "Video Guide"
+      },
+      "sections": {
+        "construction": {
+          "title": "Construction Mode",
+          "description": "Shape your structure by placing floors, walls, and doorways. This forms the foundation of your shell. To delete a specific element, make sure to select the same type."
+        },
+        "style": {
+          "title": "Style Mode",
+          "description": "Apply paint, change textures, and add structural elements like stairs and beams to customize your space."
+        },
+        "decorate": {
+          "title": "Decorate Mode",
+          "description": "Place furniture, props, wall art, and grime to add personality and realism to your shell. Press RMB on a placed decor to activate the precise placement gizmo. Allowing you to move the decor around within its tile"
+        },
+        "save": {
+          "title": "Save & Menu",
+          "description": "Set the shell name, choose a timecycle, and finalize before previewing or saving your work."
+        }
+      },
+      "camera": {
+        "title": "Camera Controls",
+        "swivel": {
+          "title": "Swivel Camera",
+          "description": "Hold <strong>right mouse button</strong> and drag to rotate."
+        },
+        "move": {
+          "title": "Move Camera",
+          "description": "Hold <strong>Shift + right mouse button</strong> and drag to pan."
+        },
+        "zoom": {
+          "title": "Zoom",
+          "description": "Use <strong>scroll wheel</strong> to zoom in and out."
+        }
+      },
+      "tips": {
+        "title": "Tips & Tricks",
+        "doorways": "Use \"Doorways\" on outer walls to freeze doors in place.",
+        "warm_lighting": "Warm interior lighting: Use <span class=\"text-primary-lighter\">yellow</span> or <span class=\"text-brown-600\">brown</span> lights.",
+        "cold_lighting": "Colder, commercial lighting: Use <span class=\"text-primary\">blue lights</span>.",
+        "quarter_walls": "Quarter-walls help prevent players from falling off stairs.",
+        "max_props": "Max props: <strong>{{ maxPropCount }}</strong> (tracked in the memory bar)."
+      },
+      "issues": {
+        "title": "Common issues",
+        "delete_element": {
+          "issue": "I can not delete an element",
+          "solution": "Make sure to have an element of the same type selected. For example, to delete a wall, go on the construction tab and select a wall type"
+        },
+        "black_screen": {
+          "issue": "I see a black screen",
+          "solution": "Make sure that you have placed at least one floor tile. If not, go to the construction tab and select \"Floor\""
+        },
+        "delete_floor": {
+          "issue": "I want to delete a floor without wall being placed around it",
+          "solution": "To do that, simply go to the style tab and use the floor style \"None\""
+        },
+        "delete_decoration": {
+          "issue": "I can not delete a decoration item",
+          "solution": "Each tile has 4 decoration slots (4 sides), make sure to press delete on the same side as your decoration is placed on"
+        },
+        "wrong_spawn": {
+          "issue": "I spawn in a wrong place",
+          "solution": "Make sure to setup the <span class=\"underline\">spawnpoint</span>. This can be done within the construction tab"
+        }
+      },
+      "close": "Close"
+    },
+    "menu": {
+      "shell": {
+        "title": "New shell",
+        "name": {
+          "label": "Shell Name",
+          "placeholder": "My new shell"
+        },
+        "timecycle": {
+          "label": "Timecycle"
+        },
+        "void": {
+          "label": "Void",
+          "info": "Shells without the void have worse visual effects, as light may leak inside. We recommend keeping the void.",
+          "options": {
+            "show": "Show void",
+            "hide": "Hide void"
+          }
+        },
+        "buttons": {
+          "preview": "Preview shell",
+          "save": "Save and exit",
+          "quit": "Exit without saving",
+          "back": "Back to editor"
+        }
+      }
+    },
+    "decor": {
+      "everything": "Everything",
+      "search": "Search items..."
+    },
+    "shell": {
+      "card": {
+        "created_by": "Created by:",
+        "created_at": "Created at:",
+        "last_updated": "Last updated:"
+      },
+      "coords": {
+        "labels": {
+          "x": "X",
+          "y": "Y",
+          "z": "Z"
+        },
+        "buttons": {
+          "save": "Save",
+          "exit": "Exit without saving",
+          "confirm": "Yes, I am sure",
+          "cancel": "Cancel"
+        },
+        "confirmation": {
+          "title": "Are you sure that you want to move this shell?",
+          "warning": "Moving shells may cause issues. By continuing you acknowledge potential unforeseen issues and take full responsibility of it."
+        }
+      },
+      "exporter": {
+        "export_type": "Export type",
+        "info": {
+          "ipl_recommendation": "If your system permits both Shell & IPL. We <span class=\"underline\">highly recommend</span> using an IPL system",
+          "system_compatibility": "Don't be warned if your system isn't listed.<br>Any system that supports IPLs or Shells will work; You'll just need to add them manually."
+        },
+        "buttons": {
+          "copy": "Copy to clipboard",
+          "copied": "Copied!",
+          "exit": "Exit"
+        }
+      },
+      "options": {
+        "details": {
+          "id": "ID:",
+          "created": "Created:",
+          "coordinates": "Coordinates:",
+          "updated": "Updated:",
+          "coords_not_available": "Not available"
+        },
+        "buttons": {
+          "edit": "Edit",
+          "teleport": "Teleport to",
+          "change_coords": "Change Coordinates",
+          "teleporter_options": "Teleporter Options",
+          "add_housing": "Add to housing",
+          "delete": "Delete shell"
+        },
+        "delete": {
+          "confirmation": "Are you sure you wish to delete this shell?",
+          "confirm": "Yes, delete",
+          "cancel": "Cancel"
+        }
+      },
+      "teleporter": {
+        "status": {
+          "active": "Teleporter active",
+          "inactive": "Teleporter inactive"
+        },
+        "labels": {
+          "heading": "W (Heading)",
+          "vehicles": "Vehicles"
+        },
+        "vehicles": {
+          "disallow": "Disallow vehicles",
+          "allow": "Allow vehicles"
+        },
+        "buttons": {
+          "get_coords": "Get current coords",
+          "delete": "Delete teleporter",
+          "save": "Save",
+          "exit": "Exit without saving"
+        }
+      }
+    },
+    "steps": {
+      "construction": "Construction",
+      "style": "Style",
+      "decorate": "Decorate",
+      "save": "Save & menu"
+    },
+    "tools": {
+      "demolition": "Toggle demolition",
+      "undo": "Undo",
+      "redo": "Redo",
+      "go_up": "Go up",
+      "go_down": "Go down",
+      "preview": "Preview mode",
+      "info": "Info"
+    }
+  },
+  "custom": {
+    "walls": {
+      "1": "Custom Wall #1",
+      "2": "Custom Wall #2",
+      "3": "Custom Wall #3",
+      "4": "Custom Wall #4",
+      "5": "Custom Wall #5",
+      "6": "Custom Wall #6",
+      "7": "Custom Wall #7",
+      "8": "Custom Wall #8",
+      "9": "Custom Wall #9",
+      "10": "Custom Wall #10",
+      "11": "Custom Wall #11",
+      "12": "Custom Wall #12",
+      "13": "Custom Wall #13",
+      "14": "Custom Wall #14",
+      "15": "Custom Wall #15",
+      "16": "Custom Wall #16",
+      "17": "Custom Wall #17",
+      "18": "Custom Wall #18",
+      "19": "Custom Wall #19",
+      "20": "Custom Wall #20",
+      "21": "Custom Wall #21",
+      "22": "Custom Wall #22",
+      "23": "Custom Wall #23",
+      "24": "Custom Wall #24",
+      "25": "Custom Wall #25",
+      "26": "Custom Wall #26",
+      "27": "Custom Wall #27",
+      "28": "Custom Wall #28",
+      "29": "Custom Wall #29",
+      "30": "Custom Wall #30",
+      "31": "Custom Wall #31",
+      "32": "Custom Wall #32",
+      "33": "Custom Wall #33",
+      "34": "Custom Wall #34",
+      "35": "Custom Wall #35",
+      "36": "Custom Wall #36",
+      "37": "Custom Wall #37",
+      "38": "Custom Wall #38",
+      "39": "Custom Wall #39",
+      "40": "Custom Wall #40",
+      "41": "Custom Wall #41",
+      "42": "Custom Wall #42",
+      "43": "Custom Wall #43",
+      "44": "Custom Wall #44",
+      "45": "Custom Wall #45",
+      "46": "Custom Wall #46",
+      "47": "Custom Wall #47",
+      "48": "Custom Wall #48",
+      "49": "Custom Wall #49",
+      "50": "Custom Wall #50",
+      "51": "Custom Wall #51",
+      "52": "Custom Wall #52",
+      "53": "Custom Wall #53",
+      "54": "Custom Wall #54",
+      "55": "Custom Wall #55",
+      "56": "Custom Wall #56",
+      "57": "Custom Wall #57",
+      "58": "Custom Wall #58",
+      "59": "Custom Wall #59",
+      "60": "Custom Wall #60",
+      "61": "Custom Wall #61",
+      "62": "Custom Wall #62",
+      "63": "Custom Wall #63",
+      "64": "Custom Wall #64",
+      "65": "Custom Wall #65",
+      "66": "Custom Wall #66",
+      "67": "Custom Wall #67",
+      "68": "Custom Wall #68",
+      "69": "Custom Wall #69",
+      "70": "Custom Wall #70",
+      "71": "Custom Wall #71",
+      "72": "Custom Wall #72",
+      "73": "Custom Wall #73",
+      "74": "Custom Wall #74",
+      "75": "Custom Wall #75",
+      "76": "Custom Wall #76",
+      "77": "Custom Wall #77",
+      "78": "Custom Wall #78",
+      "79": "Custom Wall #79",
+      "80": "Custom Wall #80",
+      "81": "Custom Wall #81",
+      "82": "Custom Wall #82",
+      "83": "Custom Wall #83",
+      "84": "Custom Wall #84",
+      "85": "Custom Wall #85",
+      "86": "Custom Wall #86",
+      "87": "Custom Wall #87",
+      "88": "Custom Wall #88",
+      "89": "Custom Wall #89",
+      "90": "Custom Wall #90",
+      "91": "Custom Wall #91",
+      "92": "Custom Wall #92",
+      "93": "Custom Wall #93",
+      "94": "Custom Wall #94",
+      "95": "Custom Wall #95",
+      "96": "Custom Wall #96",
+      "97": "Custom Wall #97",
+      "98": "Custom Wall #98",
+      "99": "Custom Wall #99",
+      "100": "Custom Wall #100"
+    },
+    "floors": {
+      "1": "Custom Floor #1",
+      "2": "Custom Floor #2",
+      "3": "Custom Floor #3",
+      "4": "Custom Floor #4",
+      "5": "Custom Floor #5",
+      "6": "Custom Floor #6",
+      "7": "Custom Floor #7",
+      "8": "Custom Floor #8",
+      "9": "Custom Floor #9",
+      "10": "Custom Floor #10",
+      "11": "Custom Floor #11",
+      "12": "Custom Floor #12",
+      "13": "Custom Floor #13",
+      "14": "Custom Floor #14",
+      "15": "Custom Floor #15",
+      "16": "Custom Floor #16",
+      "17": "Custom Floor #17",
+      "18": "Custom Floor #18",
+      "19": "Custom Floor #19",
+      "20": "Custom Floor #20",
+      "21": "Custom Floor #21",
+      "22": "Custom Floor #22",
+      "23": "Custom Floor #23",
+      "24": "Custom Floor #24",
+      "25": "Custom Floor #25",
+      "26": "Custom Floor #26",
+      "27": "Custom Floor #27",
+      "28": "Custom Floor #28",
+      "29": "Custom Floor #29",
+      "30": "Custom Floor #30",
+      "31": "Custom Floor #31",
+      "32": "Custom Floor #32",
+      "33": "Custom Floor #33",
+      "34": "Custom Floor #34",
+      "35": "Custom Floor #35",
+      "36": "Custom Floor #36",
+      "37": "Custom Floor #37",
+      "38": "Custom Floor #38",
+      "39": "Custom Floor #39",
+      "40": "Custom Floor #40",
+      "41": "Custom Floor #41",
+      "42": "Custom Floor #42",
+      "43": "Custom Floor #43",
+      "44": "Custom Floor #44",
+      "45": "Custom Floor #45",
+      "46": "Custom Floor #46",
+      "47": "Custom Floor #47",
+      "48": "Custom Floor #48",
+      "49": "Custom Floor #49",
+      "50": "Custom Floor #50",
+      "51": "Custom Floor #51",
+      "52": "Custom Floor #52",
+      "53": "Custom Floor #53",
+      "54": "Custom Floor #54",
+      "55": "Custom Floor #55",
+      "56": "Custom Floor #56",
+      "57": "Custom Floor #57",
+      "58": "Custom Floor #58",
+      "59": "Custom Floor #59",
+      "60": "Custom Floor #60",
+      "61": "Custom Floor #61",
+      "62": "Custom Floor #62",
+      "63": "Custom Floor #63",
+      "64": "Custom Floor #64",
+      "65": "Custom Floor #65",
+      "66": "Custom Floor #66",
+      "67": "Custom Floor #67",
+      "68": "Custom Floor #68",
+      "69": "Custom Floor #69",
+      "70": "Custom Floor #70",
+      "71": "Custom Floor #71",
+      "72": "Custom Floor #72",
+      "73": "Custom Floor #73",
+      "74": "Custom Floor #74",
+      "75": "Custom Floor #75",
+      "76": "Custom Floor #76",
+      "77": "Custom Floor #77",
+      "78": "Custom Floor #78",
+      "79": "Custom Floor #79",
+      "80": "Custom Floor #80",
+      "81": "Custom Floor #81",
+      "82": "Custom Floor #82",
+      "83": "Custom Floor #83",
+      "84": "Custom Floor #84",
+      "85": "Custom Floor #85",
+      "86": "Custom Floor #86",
+      "87": "Custom Floor #87",
+      "88": "Custom Floor #88",
+      "89": "Custom Floor #89",
+      "90": "Custom Floor #90",
+      "91": "Custom Floor #91",
+      "92": "Custom Floor #92",
+      "93": "Custom Floor #93",
+      "94": "Custom Floor #94",
+      "95": "Custom Floor #95",
+      "96": "Custom Floor #96",
+      "97": "Custom Floor #97",
+      "98": "Custom Floor #98",
+      "99": "Custom Floor #99",
+      "100": "Custom Floor #100"
+    },
+    "ceilings": {
+      "1": "Custom Ceiling #1",
+      "2": "Custom Ceiling #2",
+      "3": "Custom Ceiling #3",
+      "4": "Custom Ceiling #4",
+      "5": "Custom Ceiling #5",
+      "6": "Custom Ceiling #6",
+      "7": "Custom Ceiling #7",
+      "8": "Custom Ceiling #8",
+      "9": "Custom Ceiling #9",
+      "10": "Custom Ceiling #10",
+      "11": "Custom Ceiling #11",
+      "12": "Custom Ceiling #12",
+      "13": "Custom Ceiling #13",
+      "14": "Custom Ceiling #14",
+      "15": "Custom Ceiling #15",
+      "16": "Custom Ceiling #16",
+      "17": "Custom Ceiling #17",
+      "18": "Custom Ceiling #18",
+      "19": "Custom Ceiling #19",
+      "20": "Custom Ceiling #20",
+      "21": "Custom Ceiling #21",
+      "22": "Custom Ceiling #22",
+      "23": "Custom Ceiling #23",
+      "24": "Custom Ceiling #24",
+      "25": "Custom Ceiling #25",
+      "26": "Custom Ceiling #26",
+      "27": "Custom Ceiling #27",
+      "28": "Custom Ceiling #28",
+      "29": "Custom Ceiling #29",
+      "30": "Custom Ceiling #30",
+      "31": "Custom Ceiling #31",
+      "32": "Custom Ceiling #32",
+      "33": "Custom Ceiling #33",
+      "34": "Custom Ceiling #34",
+      "35": "Custom Ceiling #35",
+      "36": "Custom Ceiling #36",
+      "37": "Custom Ceiling #37",
+      "38": "Custom Ceiling #38",
+      "39": "Custom Ceiling #39",
+      "40": "Custom Ceiling #40",
+      "41": "Custom Ceiling #41",
+      "42": "Custom Ceiling #42",
+      "43": "Custom Ceiling #43",
+      "44": "Custom Ceiling #44",
+      "45": "Custom Ceiling #45",
+      "46": "Custom Ceiling #46",
+      "47": "Custom Ceiling #47",
+      "48": "Custom Ceiling #48",
+      "49": "Custom Ceiling #49",
+      "50": "Custom Ceiling #50",
+      "51": "Custom Ceiling #51",
+      "52": "Custom Ceiling #52",
+      "53": "Custom Ceiling #53",
+      "54": "Custom Ceiling #54",
+      "55": "Custom Ceiling #55",
+      "56": "Custom Ceiling #56",
+      "57": "Custom Ceiling #57",
+      "58": "Custom Ceiling #58",
+      "59": "Custom Ceiling #59",
+      "60": "Custom Ceiling #60",
+      "61": "Custom Ceiling #61",
+      "62": "Custom Ceiling #62",
+      "63": "Custom Ceiling #63",
+      "64": "Custom Ceiling #64",
+      "65": "Custom Ceiling #65",
+      "66": "Custom Ceiling #66",
+      "67": "Custom Ceiling #67",
+      "68": "Custom Ceiling #68",
+      "69": "Custom Ceiling #69",
+      "70": "Custom Ceiling #70",
+      "71": "Custom Ceiling #71",
+      "72": "Custom Ceiling #72",
+      "73": "Custom Ceiling #73",
+      "74": "Custom Ceiling #74",
+      "75": "Custom Ceiling #75",
+      "76": "Custom Ceiling #76",
+      "77": "Custom Ceiling #77",
+      "78": "Custom Ceiling #78",
+      "79": "Custom Ceiling #79",
+      "80": "Custom Ceiling #80",
+      "81": "Custom Ceiling #81",
+      "82": "Custom Ceiling #82",
+      "83": "Custom Ceiling #83",
+      "84": "Custom Ceiling #84",
+      "85": "Custom Ceiling #85",
+      "86": "Custom Ceiling #86",
+      "87": "Custom Ceiling #87",
+      "88": "Custom Ceiling #88",
+      "89": "Custom Ceiling #89",
+      "90": "Custom Ceiling #90",
+      "91": "Custom Ceiling #91",
+      "92": "Custom Ceiling #92",
+      "93": "Custom Ceiling #93",
+      "94": "Custom Ceiling #94",
+      "95": "Custom Ceiling #95",
+      "96": "Custom Ceiling #96",
+      "97": "Custom Ceiling #97",
+      "98": "Custom Ceiling #98",
+      "99": "Custom Ceiling #99",
+      "100": "Custom Ceiling #100"
+    }
+  }
+}
