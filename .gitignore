@@ -20,6 +20,6 @@ Thumbs.db
 desktop.ini
 
 # Credentials — NEVER commit these
-server.cfg.bak
 *.secret
 secrets.cfg
+server.cfg.bkp
