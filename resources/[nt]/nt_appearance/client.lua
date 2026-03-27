@@ -5,6 +5,14 @@ local camAngle       = 0.0
 local camDistance    = 0.0  -- initialised from config on open
 local camHeight      = 0.6
 
+local currentAppearance = {
+    headBlend     = { shapeFirst = 0, shapeSecond = 0, skinFirst = 0, skinSecond = 0, shapeMix = 0.5, skinMix = 0.5 },
+    faceFeatures  = {},
+    hair          = 0,
+    hairColor     = 0,
+    hairHighlight = 0,
+}
+
 -- ── Model helper ──────────────────────────────────────────────────────────────
 
 local function loadModel(hash)
@@ -62,6 +70,18 @@ local function openAppearanceNUI()
     local ped = PlayerPedId()
     print('[nt_appearance] Model loaded, new ped handle: ' .. ped)
 
+    -- Initialise head blend so hair colour natives work (must be called before SetPedHairColor)
+    SetPedHeadBlendData(ped, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.0, false)
+
+    -- Reset tracked appearance state for this session
+    currentAppearance = {
+        headBlend     = { shapeFirst = 0, shapeSecond = 0, skinFirst = 0, skinSecond = 0, shapeMix = 0.5, skinMix = 0.5 },
+        faceFeatures  = {},
+        hair          = 0,
+        hairColor     = 0,
+        hairHighlight = 0,
+    }
+
     SetEntityCoords(ped, loc.x, loc.y, found and groundZ or loc.z, false, false, false, false)
     SetEntityHeading(ped, loc.w)
     FreezeEntityPosition(ped, true)
@@ -99,6 +119,8 @@ local function openAppearanceNUI()
 
     nuiOpen        = true
     appearanceOpen = true
+    DisplayHud(false)
+    DisplayRadar(false)
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
     SendNUIMessage({ action = 'open' })
@@ -153,6 +175,8 @@ end
 local function closeAppearanceNUI()
     nuiOpen      = false
     appearanceOpen = false
+    DisplayHud(true)
+    DisplayRadar(true)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 
@@ -183,6 +207,13 @@ end, false)
 -- ── NUI callbacks ─────────────────────────────────────────────────────────────
 
 RegisterNUICallback('exitAppearance', function(_, cb)
+    local ped = PlayerPedId()
+    SetPedHeadBlendData(ped, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.0, false)
+    for i = 0, 19 do
+        SetPedFaceFeature(ped, i, 0.0)
+    end
+    SetPedComponentVariation(ped, 2, 0, 0, 0)
+    SetPedHairColor(ped, 0, 0)
     cb('ok')
     closeAppearanceNUI()
 end)
@@ -203,5 +234,50 @@ RegisterNUICallback('zoomCam', function(data, cb)
     else
         camDistance = math.max(Config.Camera.zoomMin, camDistance - 0.15)
     end
+    cb('ok')
+end)
+
+-- ── Appearance callbacks ───────────────────────────────────────────────────
+
+RegisterNUICallback('setHeadBlend', function(data, cb)
+    local ped = PlayerPedId()
+    currentAppearance.headBlend = data
+    SetPedHeadBlendData(
+        ped,
+        data.shapeFirst, data.shapeSecond, 0,
+        data.skinFirst,  data.skinSecond,  0,
+        data.shapeMix,   data.skinMix,     0.0,
+        false
+    )
+    -- Re-apply all stored face features — SetPedHeadBlendData resets them
+    for i, v in pairs(currentAppearance.faceFeatures) do
+        SetPedFaceFeature(ped, i, v)
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('setFaceFeature', function(data, cb)
+    local ped = PlayerPedId()
+    print('[nt_appearance] Face feature index: ' .. data.index .. ' value: ' .. data.value)
+    currentAppearance.faceFeatures[data.index] = data.value
+    SetPedFaceFeature(ped, data.index, data.value)
+    cb('ok')
+end)
+
+RegisterNUICallback('setHair', function(data, cb)
+    local ped = PlayerPedId()
+    currentAppearance.hair = data.hair
+    SetPedComponentVariation(ped, 2, data.hair, 0, 0)
+    -- Re-apply current hair color — changing drawable resets it
+    SetPedHairColor(ped, currentAppearance.hairColor, currentAppearance.hairHighlight)
+    cb('ok')
+end)
+
+RegisterNUICallback('setHairColor', function(data, cb)
+    local ped = PlayerPedId()
+    print('[nt_appearance] Setting hair color: ' .. data.color .. ' highlight: ' .. data.highlight)
+    currentAppearance.hairColor    = data.color
+    currentAppearance.hairHighlight = data.highlight
+    SetPedHairColor(ped, data.color, data.highlight)
     cb('ok')
 end)
