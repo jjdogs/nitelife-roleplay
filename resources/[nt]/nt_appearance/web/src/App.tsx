@@ -35,6 +35,26 @@ const CATEGORIES = [
   { id: 'tattoos',     icon: '∧', label: 'Tattoos' },
 ]
 
+const CLOTHING_SLOTS = [
+  { id: 11, label: 'Tops' },
+  { id: 4,  label: 'Pants' },
+  { id: 6,  label: 'Shoes' },
+  { id: 8,  label: 'Undershirt' },
+  { id: 3,  label: 'Torso' },
+  { id: 1,  label: 'Mask' },
+  { id: 7,  label: 'Accessories' },
+  { id: 5,  label: 'Bags' },
+  { id: 10, label: 'Decals' },
+]
+
+const PROP_SLOTS = [
+  { id: 0, label: 'Hat' },
+  { id: 1, label: 'Glasses' },
+  { id: 2, label: 'Ear' },
+  { id: 6, label: 'Watch' },
+  { id: 7, label: 'Bracelet' },
+]
+
 // ── Types ───────────────────────────────────────────────────────────────────
 
 interface HeadBlend {
@@ -50,6 +70,8 @@ interface AppearanceState {
   hairColor:     number
   hairHighlight: number
 }
+
+interface DrawableTex { drawable: number; texture: number }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -128,6 +150,58 @@ function FeatureSlider({
   )
 }
 
+// Horizontal scrollable slot selector strip
+function SlotStrip({
+  slots, active, onSelect,
+}: { slots: { id: number; label: string }[]; active: number; onSelect: (id: number) => void }) {
+  return (
+    <div className="overflow-x-auto flex-shrink-0 border-b border-white/8">
+      <div className="flex gap-1 px-3 py-2" style={{ minWidth: 'max-content' }}>
+        {slots.map(s => (
+          <button
+            key={s.id}
+            onClick={() => onSelect(s.id)}
+            style={active === s.id
+              ? { color: '#ffffff', background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.30)' }
+              : { color: 'rgba(255,255,255,0.40)' }
+            }
+            className={`px-2 py-1.5 rounded text-[9px] tracking-[0.08em] uppercase border transition-all duration-100 whitespace-nowrap ${
+              active === s.id ? '' : 'border-white/8 bg-white/[0.03] hover:text-white/65'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Model / Texture sub-tab bar (shared by clothing and props)
+function DrawableTabBar({
+  active, onChange,
+}: { active: 'model' | 'texture'; onChange: (t: 'model' | 'texture') => void }) {
+  return (
+    <div className="flex border-b border-white/8 px-4 gap-4 flex-shrink-0">
+      {(['model', 'texture'] as const).map(tab => (
+        <button
+          key={tab}
+          onClick={() => onChange(tab)}
+          style={active === tab
+            ? { color: '#ffffff', borderBottomColor: 'rgba(255,255,255,0.5)' }
+            : { color: 'rgba(255,255,255,0.40)' }
+          }
+          className={`py-2.5 text-[9px] tracking-[0.12em] uppercase border-b-2 -mb-px transition-all ${
+            active === tab ? '' : 'border-transparent hover:text-white/60'
+          }`}
+        >
+          {tab === 'model' ? 'Model' : 'Texture'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── App ──────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -136,7 +210,36 @@ function App() {
   const [isRightDragging, setIsRightDragging] = useState(false)
   const [panelPosition, setPanelPosition]     = useState<'left' | 'right'>('right')
   const [activeCategory, setActiveCategory]   = useState<string | null>(null)
-  const [hairTab, setHairTab]                 = useState<'model' | 'color' | 'highlight'>('model')
+
+  // Hair sub-tab
+  const [hairTab, setHairTab] = useState<'model' | 'color' | 'highlight'>('model')
+
+  // Clothing state
+  const [activeClothingSlot, setActiveClothingSlot] = useState(11)
+  const [clothingSubTab, setClothingSubTab]         = useState<'model' | 'texture'>('model')
+  const [clothing, setClothing] = useState<Record<number, DrawableTex>>({
+    11: { drawable: 0, texture: 0 },
+    4:  { drawable: 0, texture: 0 },
+    6:  { drawable: 0, texture: 0 },
+    8:  { drawable: 0, texture: 0 },
+    3:  { drawable: 0, texture: 0 },
+    1:  { drawable: 0, texture: 0 },
+    7:  { drawable: 0, texture: 0 },
+    5:  { drawable: 0, texture: 0 },
+    10: { drawable: 0, texture: 0 },
+  })
+
+  // Props state
+  const [activePropSlot, setActivePropSlot] = useState(0)
+  const [propSubTab, setPropSubTab]         = useState<'model' | 'texture'>('model')
+  const [pedProps, setPedProps] = useState<Record<number, DrawableTex>>({
+    0: { drawable: -1, texture: 0 },
+    1: { drawable: -1, texture: 0 },
+    2: { drawable: -1, texture: 0 },
+    6: { drawable: -1, texture: 0 },
+    7: { drawable: -1, texture: 0 },
+  })
+
   const lastMouseRef = useRef({ x: 0, y: 0 })
 
   const [appearance, setAppearance] = useState<AppearanceState>({
@@ -219,6 +322,16 @@ function App() {
       return { ...prev, hairColor: color, hairHighlight: highlight }
     })
 
+  const updateClothing = (component: number, drawable: number, texture: number) => {
+    nuiFetch('setClothing', { component, drawable, texture })
+    setClothing(prev => ({ ...prev, [component]: { drawable, texture } }))
+  }
+
+  const updateProp = (prop: number, drawable: number, texture: number) => {
+    nuiFetch('setProp', { prop, drawable, texture })
+    setPedProps(prev => ({ ...prev, [prop]: { drawable, texture } }))
+  }
+
   // ── Tab content ───────────────────────────────────────────────────────────
 
   const renderContent = () => {
@@ -273,7 +386,6 @@ function App() {
       case 'hair':
         return (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Sub-tabs */}
             <div className="flex border-b border-white/8 px-4 gap-4 flex-shrink-0">
               {(['model', 'color', 'highlight'] as const).map(tab => (
                 <button
@@ -291,7 +403,6 @@ function App() {
                 </button>
               ))}
             </div>
-
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {hairTab === 'model' && (
                 <NumberGrid count={81} active={appearance.hair} onSelect={updateHair} />
@@ -313,6 +424,87 @@ function App() {
             </div>
           </div>
         )
+
+      case 'clothing': {
+        const slot = clothing[activeClothingSlot] ?? { drawable: 0, texture: 0 }
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <SlotStrip
+              slots={CLOTHING_SLOTS}
+              active={activeClothingSlot}
+              onSelect={id => { setActiveClothingSlot(id); setClothingSubTab('model') }}
+            />
+            <DrawableTabBar active={clothingSubTab} onChange={setClothingSubTab} />
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {clothingSubTab === 'model' && (
+                <NumberGrid
+                  count={128}
+                  active={slot.drawable}
+                  onSelect={i => updateClothing(activeClothingSlot, i, slot.texture)}
+                />
+              )}
+              {clothingSubTab === 'texture' && (
+                <NumberGrid
+                  count={16}
+                  active={slot.texture}
+                  onSelect={i => updateClothing(activeClothingSlot, slot.drawable, i)}
+                />
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      case 'props': {
+        const slot = pedProps[activePropSlot] ?? { drawable: -1, texture: 0 }
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <SlotStrip
+              slots={PROP_SLOTS}
+              active={activePropSlot}
+              onSelect={id => { setActivePropSlot(id); setPropSubTab('model') }}
+            />
+            <DrawableTabBar active={propSubTab} onChange={setPropSubTab} />
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {propSubTab === 'model' && (
+                <>
+                  {/* None option */}
+                  <button
+                    onClick={() => updateProp(activePropSlot, -1, 0)}
+                    style={slot.drawable === -1
+                      ? { color: '#ffffff', background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.35)' }
+                      : { color: 'rgba(255,255,255,0.40)' }
+                    }
+                    className={`w-full mb-3 py-1.5 rounded text-[9px] tracking-[0.10em] uppercase border transition-all duration-100 ${
+                      slot.drawable === -1 ? '' : 'border-white/8 bg-white/[0.03] hover:text-white/65'
+                    }`}
+                  >
+                    None
+                  </button>
+                  <NumberGrid
+                    count={128}
+                    active={slot.drawable}
+                    onSelect={i => updateProp(activePropSlot, i, slot.texture)}
+                  />
+                </>
+              )}
+              {propSubTab === 'texture' && slot.drawable !== -1 && (
+                <NumberGrid
+                  count={16}
+                  active={slot.texture}
+                  onSelect={i => updateProp(activePropSlot, slot.drawable, i)}
+                />
+              )}
+              {propSubTab === 'texture' && slot.drawable === -1 && (
+                <p className="text-[9px] text-center mt-6"
+                   style={{ color: 'rgba(255,255,255,0.25)' }}>
+                  Select a model first
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      }
 
       default:
         return (
@@ -355,7 +547,6 @@ function App() {
         onWheel={handleWheel}
         onContextMenu={e => e.preventDefault()}
       >
-        {/* Camera control hints — top corner opposite the panel */}
         <div style={hintsStyle} className="flex flex-col items-start gap-1 pointer-events-none">
           {[['Left drag','Rotate'],['Right drag','Height'],['Scroll','Zoom']].map(([k, l]) => (
             <p key={k} className="text-[10px] tracking-wide"

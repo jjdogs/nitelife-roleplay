@@ -208,12 +208,18 @@ end, false)
 
 RegisterNUICallback('exitAppearance', function(_, cb)
     local ped = PlayerPedId()
+    -- Reset head blend and face features
     SetPedHeadBlendData(ped, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.0, false)
     for i = 0, 19 do
         SetPedFaceFeature(ped, i, 0.0)
     end
+    -- Reset hair
     SetPedComponentVariation(ped, 2, 0, 0, 0)
     SetPedHairColor(ped, 0, 0)
+    -- Reset all clothing components to defaults
+    SetPedDefaultComponentVariation(ped)
+    -- Clear all props
+    ClearAllPedProps(ped)
     cb('ok')
     closeAppearanceNUI()
 end)
@@ -270,6 +276,29 @@ RegisterNUICallback('setHair', function(data, cb)
     SetPedComponentVariation(ped, 2, data.hair, 0, 0)
     -- Re-apply current hair color — changing drawable resets it
     SetPedHairColor(ped, currentAppearance.hairColor, currentAppearance.hairHighlight)
+    cb('ok')
+end)
+
+RegisterNUICallback('setClothing', function(data, cb)
+    local ped = PlayerPedId()
+    print('[nt_appearance] Component ' .. data.component .. ' drawable: ' .. data.drawable .. ' texture: ' .. data.texture)
+    SetPedComponentVariation(ped, data.component, data.drawable, data.texture, 0)
+    if not currentAppearance.clothing then currentAppearance.clothing = {} end
+    currentAppearance.clothing[data.component] = { drawable = data.drawable, texture = data.texture }
+    cb('ok')
+end)
+
+RegisterNUICallback('setProp', function(data, cb)
+    local ped = PlayerPedId()
+    if data.drawable == -1 then
+        print('[nt_appearance] Clearing prop ' .. data.prop)
+        ClearPedProp(ped, data.prop)
+    else
+        print('[nt_appearance] Prop ' .. data.prop .. ' drawable: ' .. data.drawable .. ' texture: ' .. data.texture)
+        SetPedPropIndex(ped, data.prop, data.drawable, data.texture, true)
+    end
+    if not currentAppearance.props then currentAppearance.props = {} end
+    currentAppearance.props[data.prop] = { drawable = data.drawable, texture = data.texture }
     cb('ok')
 end)
 
