@@ -1,9 +1,11 @@
-local nuiOpen       = false
+local nuiOpen        = false
 local appearanceOpen = false
 local appearanceCam  = nil
 local camAngle       = 0.0
 local camDistance    = 0.0  -- initialised from config on open
 local camHeight      = 0.6
+local currentCitizenId = nil
+local currentGender    = 0
 
 local currentAppearance = {
     headBlend     = { shapeFirst = 0, shapeSecond = 0, skinFirst = 0, skinSecond = 0, shapeMix = 0.5, skinMix = 0.5 },
@@ -50,9 +52,8 @@ local function openAppearanceNUI()
     end
     FreezeEntityPosition(ped, true)
 
-    -- 3. Swap to freemode model (gender set from character data in a later phase)
-    local gender = 0
-    local model  = gender == 1 and "mp_f_freemode_01" or "mp_m_freemode_01"
+    -- 3. Swap to freemode model based on character gender
+    local model = currentGender == 1 and "mp_f_freemode_01" or "mp_m_freemode_01"
     if type(model) == "string" then model = joaat(model) end
 
     if IsModelInCdimage(model) then
@@ -124,7 +125,7 @@ local function openAppearanceNUI()
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
     SendNUIMessage({ action = 'open' })
-    SendNUIMessage({ type = 'setConfig', panelPosition = Config.PanelPosition })
+    SendNUIMessage({ type = 'setConfig', panelPosition = Config.PanelPosition, appearanceReady = true })
     print('[nt_appearance] Opened appearance editor')
 
     -- 5. Camera position tick (input handled via NUI callbacks)
@@ -173,8 +174,10 @@ local function openAppearanceNUI()
 end
 
 local function closeAppearanceNUI()
-    nuiOpen      = false
+    nuiOpen        = false
     appearanceOpen = false
+    currentCitizenId = nil
+    currentGender    = 0
     DisplayHud(true)
     DisplayRadar(true)
     SetNuiFocus(false, false)
@@ -191,6 +194,24 @@ local function closeAppearanceNUI()
     FreezeEntityPosition(ped, false)
     print('[nt_appearance] Closed appearance editor')
 end
+
+-- ── Open event (called by nt_character after character creation) ───────────────
+
+RegisterNetEvent('nt_appearance:open')
+AddEventHandler('nt_appearance:open', function(citizenid, gender)
+    currentCitizenId = citizenid
+    currentGender    = gender or 0
+    CreateThread(function()
+        openAppearanceNUI()
+    end)
+end)
+
+RegisterNetEvent('nt_appearance:appearanceSaved')
+AddEventHandler('nt_appearance:appearanceSaved', function()
+    print('[nt_appearance] Appearance saved successfully')
+    closeAppearanceNUI()
+    TriggerEvent('nt_appearance:complete', currentCitizenId)
+end)
 
 -- ── Commands ──────────────────────────────────────────────────────────────────
 
@@ -309,4 +330,115 @@ RegisterNUICallback('setHairColor', function(data, cb)
     currentAppearance.hairHighlight = data.highlight
     SetPedHairColor(ped, data.color, data.highlight)
     cb('ok')
+end)
+
+-- ── Save appearance ────────────────────────────────────────────────────────────
+
+local faceFeatureNames = {
+    [0]  = 'noseWidth',
+    [1]  = 'nosePeakHigh',
+    [2]  = 'nosePeakSize',
+    [3]  = 'noseBoneHigh',
+    [4]  = 'nosePeakLowering',
+    [5]  = 'noseBoneTwist',
+    [6]  = 'eyeBrownHigh',
+    [7]  = 'eyeBrownForward',
+    [8]  = 'cheeksBoneHigh',
+    [9]  = 'cheeksBoneWidth',
+    [10] = 'cheeksWidth',
+    [11] = 'eyesOpening',
+    [12] = 'lipsThickness',
+    [13] = 'jawBoneWidth',
+    [14] = 'jawBoneBackSize',
+    [15] = 'chinBoneLenght',
+    [16] = 'chinBoneLowering',
+    [17] = 'chinBoneSize',
+    [18] = 'chinHole',
+    [19] = 'neckThickness',
+}
+
+RegisterNUICallback('saveAppearance', function(_, cb)
+    if not currentCitizenId then
+        print('[nt_appearance] saveAppearance: no currentCitizenId — editor was opened via command, not nt_character')
+        cb('ok')
+        return
+    end
+
+    local model = currentGender == 1 and 'mp_f_freemode_01' or 'mp_m_freemode_01'
+
+    -- Map face features from index to named keys (illenium-appearance format)
+    local faceFeatures = {}
+    for i = 0, 19 do
+        local name = faceFeatureNames[i]
+        if name then
+            faceFeatures[name] = currentAppearance.faceFeatures[i] or 0.0
+        end
+    end
+
+    -- Build components array (all 12 slots, 0-11)
+    local components = {}
+    for i = 0, 11 do
+        local comp = currentAppearance.clothing and currentAppearance.clothing[i]
+        table.insert(components, {
+            component_id = i,
+            drawable     = comp and comp.drawable or 0,
+            texture      = comp and comp.texture  or 0,
+        })
+    end
+
+    -- Build props array (slots 0, 1, 2, 6, 7)
+    local props = {}
+    for _, propId in ipairs({ 0, 1, 2, 6, 7 }) do
+        local prop = currentAppearance.props and currentAppearance.props[propId]
+        table.insert(props, {
+            prop_id  = propId,
+            drawable = prop and prop.drawable or -1,
+            texture  = prop and prop.texture  or -1,
+        })
+    end
+
+    -- Full skin JSON matching illenium-appearance format
+    local skin = {
+        model      = model,
+        eyeColor   = currentAppearance.eyeColor or -1,
+        components = components,
+        props      = props,
+        headBlend  = {
+            shapeFirst  = currentAppearance.headBlend.shapeFirst  or 0,
+            shapeSecond = currentAppearance.headBlend.shapeSecond or 0,
+            shapeThird  = 0,
+            skinFirst   = currentAppearance.headBlend.skinFirst   or 0,
+            skinSecond  = currentAppearance.headBlend.skinSecond  or 0,
+            skinThird   = 0,
+            shapeMix    = currentAppearance.headBlend.shapeMix    or 0.5,
+            skinMix     = currentAppearance.headBlend.skinMix     or 0.5,
+            thirdMix    = 0.0,
+        },
+        faceFeatures = faceFeatures,
+        headOverlays = {
+            blemishes       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            beard           = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            eyebrows        = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            ageing          = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            makeUp          = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            blush           = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            complexion      = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            sunDamage       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            lipstick        = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            moleAndFreckles = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            chestHair       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+            bodyBlemishes   = { style = 0, opacity = 0, color = 0, secondColor = 0 },
+        },
+        hair = {
+            style     = currentAppearance.hair          or 0,
+            texture   = 0,
+            color     = currentAppearance.hairColor     or 0,
+            highlight = currentAppearance.hairHighlight or 0,
+        },
+        tattoos = {},
+    }
+
+    TriggerServerEvent('nt_appearance:saveAppearance', currentCitizenId, model, json.encode(skin))
+    cb('ok')
+    -- NUI closes automatically when nt_appearance:appearanceSaved fires
 end)

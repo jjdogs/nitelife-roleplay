@@ -77,8 +77,14 @@ end)
 RegisterNUICallback('createCharacter', function(data, cb)
     local success, result = serverCall('nt_character:createCharacter', data)
     if success then
-        loadAndSendCharacters()
         cb({ success = true, citizenid = result })
+        -- Hand off to appearance editor
+        CreateThread(function()
+            Wait(100)  -- let NUI process the success response first
+            closeNUI()
+            local gender = tonumber(data.gender) or 0
+            TriggerEvent('nt_appearance:open', result, gender)
+        end)
     else
         print('[nt_character] createCharacter failed: ' .. tostring(result))
         cb({ success = false, error = result or 'Unknown error' })

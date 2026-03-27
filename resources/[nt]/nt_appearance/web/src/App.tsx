@@ -210,6 +210,8 @@ function App() {
   const [isRightDragging, setIsRightDragging] = useState(false)
   const [panelPosition, setPanelPosition]     = useState<'left' | 'right'>('right')
   const [activeCategory, setActiveCategory]   = useState<string | null>(null)
+  const [appearanceReady, setAppearanceReady] = useState(false)
+  const [saving, setSaving]                   = useState(false)
 
   // Hair sub-tab
   const [hairTab, setHairTab] = useState<'model' | 'color' | 'highlight'>('model')
@@ -288,8 +290,11 @@ function App() {
     const handler = (e: MessageEvent) => {
       const data = e.data
       if (data.action === 'open')  setVisible(true)
-      if (data.action === 'close') setVisible(false)
-      if (data.type === 'setConfig') setPanelPosition(data.panelPosition ?? 'right')
+      if (data.action === 'close') { setVisible(false); setSaving(false); setAppearanceReady(false) }
+      if (data.type === 'setConfig') {
+        setPanelPosition(data.panelPosition ?? 'right')
+        if (data.appearanceReady) setAppearanceReady(true)
+      }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
@@ -609,11 +614,16 @@ function App() {
         {/* Bottom actions */}
         <div className="px-6 py-5 border-t border-white/8 flex flex-col gap-2 flex-shrink-0">
           <button
-            disabled
-            className="w-full py-2.5 rounded bg-white/[0.06] text-xs font-semibold tracking-wide cursor-not-allowed"
-            style={{ color: 'rgba(255,255,255,0.30)' }}
+            disabled={!appearanceReady || saving}
+            onClick={() => { setSaving(true); nuiFetch('saveAppearance', {}) }}
+            className={`w-full py-2.5 rounded text-xs font-semibold tracking-wide transition-all duration-150 ${
+              appearanceReady && !saving
+                ? 'bg-white/15 border border-white/30 hover:bg-white/20 cursor-pointer'
+                : 'bg-white/[0.06] cursor-not-allowed'
+            }`}
+            style={{ color: appearanceReady && !saving ? '#ffffff' : 'rgba(255,255,255,0.30)' }}
           >
-            Save &amp; Continue
+            {saving ? 'Saving...' : 'Save & Continue'}
           </button>
           <button
             onClick={() => nuiFetch('exitAppearance', {})}
