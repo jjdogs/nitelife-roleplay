@@ -1,0 +1,2 @@
+-- nt_appearance server.lua
+-- Placeholder — server logic added in future phases

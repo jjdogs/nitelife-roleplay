@@ -121,7 +121,7 @@ AddEventHandler('nt_character:createCharacter', function(data)
         lastname    = data.lastName,
         suffix      = data.suffix      or '',
         birthdate   = data.dob,
-        gender      = 0,
+        gender      = tonumber(data.gender) or 0,
         nationality = data.nationality,
         phone       = phone,
         account     = GenerateBankAccount(),

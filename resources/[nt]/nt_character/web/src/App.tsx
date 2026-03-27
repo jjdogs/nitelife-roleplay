@@ -24,7 +24,7 @@ type SpawnLocation = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const emptyForm = { firstName: '', middleName: '', lastName: '', suffix: '', dob: '', nationality: '' }
+const emptyForm = { gender: 0, firstName: '', middleName: '', lastName: '', suffix: '', dob: '', nationality: '' }
 
 function charName(c: Character)     { return `${c.firstName} ${c.lastName}` }
 function charFullName(c: Character) { return [c.firstName, c.middleName, c.lastName, c.suffix].filter(Boolean).join(' ') }
@@ -267,7 +267,7 @@ function CreateSlotCard({ selected, form, errors, serverError, onSelect, onChang
   errors: Partial<Record<keyof typeof emptyForm, string>>
   serverError?: string
   onSelect: () => void
-  onChange: (field: keyof typeof emptyForm, value: string) => void
+  onChange: (field: keyof typeof emptyForm, value: string | number) => void
   onContinue: () => void
   onBack: () => void
 }) {
@@ -290,6 +290,24 @@ function CreateSlotCard({ selected, form, errors, serverError, onSelect, onChang
       <div className="grid transition-[grid-template-rows] duration-300 ease-in-out" style={{ gridTemplateRows: selected ? '1fr' : '0fr' }}>
         <div className="overflow-hidden">
           <div className="px-4 pt-4 pb-4 flex flex-col gap-2.5">
+            <FormField label="Gender" required>
+              <div className="flex gap-2">
+                {([{ label: 'Male', value: 0, symbol: '♂' }, { label: 'Female', value: 1, symbol: '♀' }] as const).map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={e => { e.stopPropagation(); onChange('gender', opt.value) }}
+                    className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-lg border transition-all duration-150 cursor-pointer
+                      ${form.gender === opt.value
+                        ? 'border-white/45 bg-white/10 text-white'
+                        : 'border-white/10 bg-white/[0.03] text-white/40 hover:border-white/22 hover:bg-white/[0.06] hover:text-white/65'}`}
+                  >
+                    <span className="text-base leading-none">{opt.symbol}</span>
+                    <span className="text-xs font-medium">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </FormField>
             <FormField label="First name" required error={errors.firstName}>
               <input type="text" value={form.firstName} onChange={e => onChange('firstName', e.target.value)} placeholder="First name" className={inputCls} />
             </FormField>
@@ -525,7 +543,7 @@ function CreateCharacterScreen({ characters, maxSlots, onBack }: {
     setServerError(undefined)
   }
 
-  function handleChange(field: keyof typeof emptyForm, value: string) {
+  function handleChange(field: keyof typeof emptyForm, value: string | number) {
     setForm(prev => ({ ...prev, [field]: value }))
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
   }
