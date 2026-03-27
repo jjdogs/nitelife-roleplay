@@ -14,34 +14,58 @@ function Camera.Create(coords, rot, fov, transition)
     if activeCam then
         Camera.Destroy()
     end
-    
+
     fov = fov or Config.Camera.defaultFov
     transition = transition ~= false
-    
+
+    print(string.format('[nt_3dminigames] Camera.Create: coords=(%.2f, %.2f, %.2f) rot=(%.2f, %.2f, %.2f) fov=%.1f transition=%s',
+        coords.x, coords.y, coords.z, rot.x, rot.y, rot.z, fov, tostring(transition)))
+
     -- Store original camera position for restoration
     originalCamCoords = GetGameplayCamCoord()
     originalCamRot = GetGameplayCamRot(2)
-    
+
     -- Create scripted camera
     activeCam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+
+    if not activeCam or activeCam == 0 then
+        print('[nt_3dminigames] Camera.Create: CreateCam returned 0 — camera creation failed')
+        activeCam = nil
+        return nil
+    end
+
+    print('[nt_3dminigames] Camera.Create: handle=' .. tostring(activeCam))
+
     SetCamCoord(activeCam, coords.x, coords.y, coords.z)
     SetCamRot(activeCam, rot.x, rot.y, rot.z, 2)
     SetCamFov(activeCam, fov)
-    
-    -- Activate with transition
+    SetCamActive(activeCam, true)
+
+    -- RenderScriptCams must be called from inside the game loop thread (Wait-capable).
+    -- Deferring one frame with CreateThread + Wait(0) ensures the cam is committed before rendering.
+    local camHandle = activeCam
     if transition then
         isTransitioning = true
-        SetCamActive(activeCam, true)
-        RenderScriptCams(true, true, Config.Camera.transitionTime, true, true)
-        
-        SetTimeout(Config.Camera.transitionTime, function()
-            isTransitioning = false
+        CreateThread(function()
+            Wait(0)
+            if activeCam == camHandle then
+                RenderScriptCams(true, true, Config.Camera.transitionTime, true, true)
+                print('[nt_3dminigames] Camera.Create: RenderScriptCams called (transition=' .. Config.Camera.transitionTime .. 'ms)')
+            end
+            SetTimeout(Config.Camera.transitionTime, function()
+                isTransitioning = false
+            end)
         end)
     else
-        SetCamActive(activeCam, true)
-        RenderScriptCams(true, false, 0, true, true)
+        CreateThread(function()
+            Wait(0)
+            if activeCam == camHandle then
+                RenderScriptCams(true, false, 0, true, true)
+                print('[nt_3dminigames] Camera.Create: RenderScriptCams called (instant)')
+            end
+        end)
     end
-    
+
     return activeCam
 end
 

@@ -23,7 +23,6 @@ client_scripts {
     'client/core/ui.lua',
     'client/main.lua',
     'client/creator/creator.lua',
-    'client/minigames/*.lua',
 }
 
 files {
@@ -32,4 +31,5 @@ files {
 
 dependencies {
     'ox_lib',
+    'object_gizmo',
 }

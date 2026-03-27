@@ -65,11 +65,18 @@ function Zones.IsPointInside(id, point)
         local dist = #(point - zone.coords)
         return dist <= (zone.radius or zone.size.x)
     else
-        -- Box check (simplified, doesn't account for rotation)
+        -- Rotate point into zone local space to handle zone.rotation
         local halfSize = zone.size / 2
-        return point.x >= zone.coords.x - halfSize.x and point.x <= zone.coords.x + halfSize.x
-           and point.y >= zone.coords.y - halfSize.y and point.y <= zone.coords.y + halfSize.y
-           and point.z >= zone.coords.z - halfSize.z and point.z <= zone.coords.z + halfSize.z
+        local dx = point.x - zone.coords.x
+        local dy = point.y - zone.coords.y
+        local angle = math.rad(-zone.rotation)
+        local cos_a = math.cos(angle)
+        local sin_a = math.sin(angle)
+        local lx = cos_a * dx - sin_a * dy
+        local ly = sin_a * dx + cos_a * dy
+        return math.abs(lx) <= halfSize.x
+           and math.abs(ly) <= halfSize.y
+           and math.abs(point.z - zone.coords.z) <= halfSize.z
     end
 end
 

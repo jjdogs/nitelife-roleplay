@@ -1,535 +1,359 @@
 --[[
-    nt_3dminigames - In-Game Creator
-    Build and save minigames without coding
+    nt_3dminigames - Creator v0.1
+    In-game tool for building minigame configurations.
+    Open with: /ntcreator
+
+    Gizmo powered by DemiAutomatic/object_gizmo
+    https://github.com/DemiAutomatic/object_gizmo
 ]]
 
 local isCreatorActive = false
-local creatorData = nil
-local freecamActive = false
-local selectedZone = nil
+local suppressClose   = false  -- prevents onClose → ExitCreator when hiding menu programmatically
+local nameCounter     = 0      -- increments each session so default names stay unique
 
---- Start the minigame creator
-local function StartCreator()
-    if isCreatorActive then
-        UI.Notify({ title = 'Creator', message = 'Creator already open', type = 'error' })
-        return
-    end
-    
-    isCreatorActive = true
-    creatorData = {
-        name = 'New Minigame',
-        type = 'pour',
-        zones = {},
-        targets = {},
-        camera = nil,
-        holdProp = nil,
-        particle = nil,
-    }
-    
-    ShowCreatorMenu()
-end
+-- Per-session state; reset each time the creator opens
+local session = nil
 
---- Show main creator menu
-function ShowCreatorMenu()
-    UI.Menu({
-        id = 'minigame_creator',
-        title = 'Minigame Creator',
-        subtitle = creatorData.name,
-        options = {
-            {
-                title = 'Minigame Name',
-                description = 'Current: ' .. creatorData.name,
-                icon = 'fas fa-tag',
-                onSelect = function()
-                    local result = UI.Input({
-                        header = 'Minigame Name',
-                        inputs = {
-                            { type = 'input', label = 'Name', default = creatorData.name }
-                        }
-                    })
-                    if result and result[1] then
-                        creatorData.name = result[1]
-                    end
-                    ShowCreatorMenu()
-                end
-            },
-            {
-                title = 'Minigame Type',
-                description = 'Current: ' .. creatorData.type,
-                icon = 'fas fa-gamepad',
-                onSelect = function()
-                    ShowTypeMenu()
-                end
-            },
-            {
-                title = 'Set Camera Position',
-                description = 'Define the minigame camera view',
-                icon = 'fas fa-camera',
-                onSelect = function()
-                    StartCameraPlacement()
-                end
-            },
-            {
-                title = 'Add Zone',
-                description = 'Add an interaction zone (' .. #creatorData.zones .. ' zones)',
-                icon = 'fas fa-vector-square',
-                onSelect = function()
-                    StartZonePlacement()
-                end
-            },
-            {
-                title = 'Set Hold Prop',
-                description = 'Prop player holds (cursor attached)',
-                icon = 'fas fa-hand-holding',
-                onSelect = function()
-                    ShowPropMenu('holdProp')
-                end
-            },
-            {
-                title = 'Set Particle Effect',
-                description = 'Pour/spray particle effect',
-                icon = 'fas fa-spray-can',
-                onSelect = function()
-                    ShowParticleMenu()
-                end
-            },
-            {
-                title = 'Preview Minigame',
-                description = 'Test the current configuration',
-                icon = 'fas fa-play',
-                onSelect = function()
-                    PreviewMinigame()
-                end
-            },
-            {
-                title = 'Save Minigame',
-                description = 'Save to file',
-                icon = 'fas fa-save',
-                onSelect = function()
-                    SaveMinigame()
-                end
-            },
-            {
-                title = 'Exit Creator',
-                description = 'Close without saving',
-                icon = 'fas fa-times',
-                iconColor = '#EF4444',
-                onSelect = function()
-                    local result = UI.Alert({
-                        header = 'Exit Creator',
-                        content = 'Are you sure? Unsaved changes will be lost.',
-                        type = 'warning',
-                    })
-                    if result == 'confirm' then
-                        ExitCreator()
-                    else
-                        ShowCreatorMenu()
-                    end
-                end
-            },
-        },
-        onClose = function()
-            -- Don't close creator, just menu
-        end
-    })
-end
+-- Table placement working state
+local currentTableProp       = nil  -- entity handle of the prop currently being placed/edited
+local currentTableModelIndex = 1    -- index into Config.Props.table_props
+local isPlacingTable         = false
+local lastScrollTime         = 0
 
---- Show type selection menu
-function ShowTypeMenu()
-    local options = {}
-    
-    for typeName, typeData in pairs(Config.MinigameTypes) do
-        table.insert(options, {
-            title = typeName:sub(1,1):upper() .. typeName:sub(2),
-            description = typeData.description,
-            icon = 'fas fa-gamepad',
-            onSelect = function()
-                creatorData.type = typeName
-                UI.Notify({ title = 'Type Set', message = 'Type: ' .. typeName, type = 'success' })
-                ShowCreatorMenu()
-            end
-        })
-    end
-    
-    UI.Menu({
-        id = 'creator_type',
-        title = 'Select Type',
-        options = options,
-        onClose = function()
-            ShowCreatorMenu()
-        end
-    })
-end
+-- ─── Session ──────────────────────────────────────────────────────────────────
 
---- Start camera placement mode
-function StartCameraPlacement()
-    UI.HideMenu()
-    freecamActive = true
-    
-    local ped = PlayerPedId()
-    local playerCoords = GetEntityCoords(ped)
-    
-    -- Start at a default position looking at player
-    local camCoords = playerCoords + vector3(0, 2, 2)
-    local camRot = vector3(-30, 0, 180)
-    
-    Camera.Create(camCoords, camRot, 50)
-    Cursor.Enable(true)
-    
-    UI.ShowText({
-        title = 'Camera Placement',
-        options = {
-            { label = 'Move Camera', keybind = 'WASD' },
-            { label = 'Rotate', keybind = 'Mouse' },
-            { label = 'Up/Down', keybind = 'Q/E' },
-            { label = 'Confirm', keybind = 'ENTER' },
-            { label = 'Cancel', keybind = 'BACKSPACE' },
-        }
-    })
-    
-    CreateThread(function()
-        while freecamActive do
-            Wait(0)
-            
-            local cam = Camera.Get()
-            if not cam then break end
-            
-            local currentCoords = GetCamCoord(cam)
-            local currentRot = GetCamRot(cam, 2)
-            local speed = Config.Creator.freecamSpeed
-            
-            -- Movement
-            local forward = Camera.GetForwardVector()
-            local right = Cursor.RotationToRight(currentRot)
-            
-            if IsDisabledControlPressed(0, 32) then -- W
-                currentCoords = currentCoords + forward * speed
-            end
-            if IsDisabledControlPressed(0, 33) then -- S
-                currentCoords = currentCoords - forward * speed
-            end
-            if IsDisabledControlPressed(0, 34) then -- A
-                currentCoords = currentCoords - right * speed
-            end
-            if IsDisabledControlPressed(0, 35) then -- D
-                currentCoords = currentCoords + right * speed
-            end
-            if IsDisabledControlPressed(0, 44) then -- Q (down)
-                currentCoords = currentCoords - vector3(0, 0, speed)
-            end
-            if IsDisabledControlPressed(0, 38) then -- E (up)
-                currentCoords = currentCoords + vector3(0, 0, speed)
-            end
-            
-            Camera.SetCoords(currentCoords)
-            
-            -- Rotation (mouse)
-            Camera.HandleLook(1.5)
-            
-            -- Confirm
-            if IsDisabledControlJustPressed(0, 191) then -- ENTER
-                creatorData.camera = {
-                    coords = GetCamCoord(cam),
-                    rot = GetCamRot(cam, 2),
-                    fov = GetCamFov(cam),
-                }
-                UI.Notify({ title = 'Camera Saved', message = 'Camera position saved', type = 'success' })
-                ExitCameraPlacement()
-                return
-            end
-            
-            -- Cancel
-            if IsDisabledControlJustPressed(0, 177) then -- BACKSPACE
-                ExitCameraPlacement()
-                return
-            end
-            
-            Cursor.DisableControls()
-        end
-    end)
-end
-
---- Exit camera placement mode
-function ExitCameraPlacement()
-    freecamActive = false
-    Camera.Destroy()
-    Cursor.Disable()
-    UI.HideText()
-    ShowCreatorMenu()
-end
-
---- Start zone placement mode
-function StartZonePlacement()
-    UI.HideMenu()
-    
-    local ped = PlayerPedId()
-    local placing = true
-    local zoneCoords = GetEntityCoords(ped) + vector3(0, 1, 0)
-    local zoneSize = vector3(0.5, 0.5, 0.2)
-    
-    UI.ShowText({
-        title = 'Zone Placement',
-        options = {
-            { label = 'Move Zone', keybind = 'WASD' },
-            { label = 'Resize', keybind = 'Scroll' },
-            { label = 'Height', keybind = 'Q/E' },
-            { label = 'Place Zone', keybind = 'ENTER' },
-            { label = 'Done', keybind = 'BACKSPACE' },
-        }
-    })
-    
-    CreateThread(function()
-        while placing do
-            Wait(0)
-            
-            local speed = 0.02
-            
-            -- Movement
-            if IsDisabledControlPressed(0, 32) then zoneCoords = zoneCoords + vector3(0, speed, 0) end
-            if IsDisabledControlPressed(0, 33) then zoneCoords = zoneCoords - vector3(0, speed, 0) end
-            if IsDisabledControlPressed(0, 34) then zoneCoords = zoneCoords - vector3(speed, 0, 0) end
-            if IsDisabledControlPressed(0, 35) then zoneCoords = zoneCoords + vector3(speed, 0, 0) end
-            if IsDisabledControlPressed(0, 44) then zoneCoords = zoneCoords - vector3(0, 0, speed) end
-            if IsDisabledControlPressed(0, 38) then zoneCoords = zoneCoords + vector3(0, 0, speed) end
-            
-            -- Resize with scroll
-            local scroll = GetDisabledControlNormal(0, 14)
-            if scroll ~= 0 then
-                local change = scroll * 0.05
-                zoneSize = vector3(
-                    math.max(0.1, zoneSize.x + change),
-                    math.max(0.1, zoneSize.y + change),
-                    zoneSize.z
-                )
-            end
-            
-            -- Draw preview
-            DrawMarker(
-                1, zoneCoords.x, zoneCoords.y, zoneCoords.z - zoneSize.z/2,
-                0, 0, 0, 0, 0, 0,
-                zoneSize.x, zoneSize.y, zoneSize.z,
-                0, 255, 0, 100,
-                false, false, 2, false, nil, nil, false
-            )
-            
-            -- Place zone
-            if IsDisabledControlJustPressed(0, 191) then -- ENTER
-                table.insert(creatorData.zones, {
-                    coords = zoneCoords,
-                    size = zoneSize,
-                    maxProgress = 50,
-                })
-                UI.Notify({ title = 'Zone Added', message = 'Zone #' .. #creatorData.zones .. ' placed', type = 'success' })
-            end
-            
-            -- Done
-            if IsDisabledControlJustPressed(0, 177) then -- BACKSPACE
-                placing = false
-            end
-            
-            Cursor.DisableControls()
-        end
-        
-        UI.HideText()
-        ShowCreatorMenu()
-    end)
-end
-
---- Show prop selection menu
-function ShowPropMenu(propType)
-    local options = {}
-    
-    for name, model in pairs(Config.DefaultProps) do
-        table.insert(options, {
-            title = name:gsub('_', ' '):gsub('^%l', string.upper),
-            description = model,
-            icon = 'fas fa-cube',
-            onSelect = function()
-                creatorData[propType] = model
-                UI.Notify({ title = 'Prop Set', message = 'Set to: ' .. model, type = 'success' })
-                ShowCreatorMenu()
-            end
-        })
-    end
-    
-    -- Custom prop option
-    table.insert(options, {
-        title = 'Custom Prop',
-        description = 'Enter prop model name',
-        icon = 'fas fa-keyboard',
-        onSelect = function()
-            local result = UI.Input({
-                header = 'Custom Prop',
-                inputs = {
-                    { type = 'input', label = 'Model Name', placeholder = 'prop_example' }
-                }
-            })
-            if result and result[1] then
-                creatorData[propType] = result[1]
-                UI.Notify({ title = 'Prop Set', message = 'Set to: ' .. result[1], type = 'success' })
-            end
-            ShowCreatorMenu()
-        end
-    })
-    
-    UI.Menu({
-        id = 'creator_prop',
-        title = 'Select Prop',
-        options = options,
-        onClose = function()
-            ShowCreatorMenu()
-        end
-    })
-end
-
---- Show particle selection menu
-function ShowParticleMenu()
-    local options = {
-        {
-            title = 'Water Pour',
-            description = 'Water pouring effect',
-            icon = 'fas fa-tint',
-            onSelect = function()
-                creatorData.particle = { dict = 'core', name = 'ent_sht_water', scale = 0.5 }
-                ShowCreatorMenu()
-            end
-        },
-        {
-            title = 'Dust',
-            description = 'Dust/powder effect',
-            icon = 'fas fa-cloud',
-            onSelect = function()
-                creatorData.particle = { dict = 'core', name = 'ent_dst_rocks', scale = 0.5 }
-                ShowCreatorMenu()
-            end
-        },
-        {
-            title = 'Sparks',
-            description = 'Spark effect',
-            icon = 'fas fa-bolt',
-            onSelect = function()
-                creatorData.particle = { dict = 'core', name = 'ent_ray_heli_spark', scale = 0.5 }
-                ShowCreatorMenu()
-            end
-        },
-        {
-            title = 'None',
-            description = 'No particle effect',
-            icon = 'fas fa-ban',
-            onSelect = function()
-                creatorData.particle = nil
-                ShowCreatorMenu()
-            end
+local function NewSession()
+    nameCounter = nameCounter + 1
+    return {
+        name  = 'Minigame' .. nameCounter,
+        table = {
+            prop    = nil,
+            model   = nil,
+            coords  = nil,
+            rot     = nil,
+            placed  = false,
         },
     }
-    
-    UI.Menu({
-        id = 'creator_particle',
-        title = 'Select Particle',
-        options = options,
-        onClose = function()
-            ShowCreatorMenu()
-        end
-    })
 end
 
---- Preview the minigame
-function PreviewMinigame()
-    if not creatorData.camera then
-        UI.Notify({ title = 'Error', message = 'Set camera position first', type = 'error' })
-        return
-    end
-    
-    if #creatorData.zones == 0 then
-        UI.Notify({ title = 'Error', message = 'Add at least one zone', type = 'error' })
-        return
-    end
-    
-    UI.HideMenu()
-    
-    local config = {
-        type = creatorData.type,
-        name = creatorData.name,
-        camera = creatorData.camera,
-        zones = creatorData.zones,
-        holdProp = creatorData.holdProp,
-        particle = creatorData.particle,
-        pourRate = 2.0,
-        winCondition = { coverage = 100 },
-    }
-    
-    exports['nt_3dminigames']:StartMinigame(config, function(success, data)
-        UI.Notify({ 
-            title = 'Preview Complete', 
-            message = success and 'Completed!' or 'Cancelled', 
-            type = success and 'success' or 'info' 
-        })
-        ShowCreatorMenu()
-    end)
-end
+-- ─── Cleanup ──────────────────────────────────────────────────────────────────
 
---- Save minigame to file
-function SaveMinigame()
-    local result = UI.Alert({
-        header = 'Save Minigame',
-        content = 'Save "' .. creatorData.name .. '" to registered minigames?',
-        type = 'info',
-    })
-    
-    if result == 'confirm' then
-        local config = {
-            type = creatorData.type,
-            name = creatorData.name,
-            camera = creatorData.camera,
-            zones = creatorData.zones,
-            targets = creatorData.targets,
-            holdProp = creatorData.holdProp,
-            particle = creatorData.particle,
-            pourRate = 2.0,
-            winCondition = { coverage = 100 },
-        }
-        
-        exports['nt_3dminigames']:RegisterMinigame(creatorData.name, config)
-        
-        -- Print config for manual saving
-        print('--- MINIGAME CONFIG ---')
-        print('RegisterMinigame("' .. creatorData.name .. '", ' .. json.encode(config, { indent = true }) .. ')')
-        print('--- END CONFIG ---')
-        
-        UI.Notify({ 
-            title = 'Saved', 
-            message = 'Minigame registered! Check console for config.', 
-            type = 'success' 
-        })
-    end
-    
-    ShowCreatorMenu()
-end
-
---- Exit the creator
-function ExitCreator()
+local function ExitCreator()
     isCreatorActive = false
-    creatorData = nil
-    Camera.Destroy()
+    isPlacingTable  = false
+    suppressClose   = false
+
+    if currentTableProp then
+        Props.Delete(currentTableProp)
+        currentTableProp = nil
+    end
+
     Cursor.Disable()
     UI.HideText()
-    UI.HideMenu()
 end
 
---- Check if creator is active
-function IsCreatorActive()
-    return isCreatorActive
+-- ─── Model cycling ────────────────────────────────────────────────────────────
+
+-- Spawns a new prop model at the position/rotation of the current one.
+-- Only valid during the placement phase (before gizmo handoff).
+local function CycleTableModel(direction)
+    if not currentTableProp then return end
+
+    local tableProps = Config.Props.table_props
+    if not tableProps or #tableProps == 0 then return end
+
+    local oldCoords = GetEntityCoords(currentTableProp)
+    local oldRot    = GetEntityRotation(currentTableProp, 2)
+
+    Props.Delete(currentTableProp)
+
+    currentTableModelIndex = currentTableModelIndex + direction
+    if currentTableModelIndex < 1 then
+        currentTableModelIndex = #tableProps
+    elseif currentTableModelIndex > #tableProps then
+        currentTableModelIndex = 1
+    end
+
+    local newModel = tableProps[currentTableModelIndex]
+    currentTableProp = Props.Spawn(newModel, oldCoords, oldRot)
+
+    -- Unfreeze so raycast placement can still move it
+    FreezeEntityPosition(currentTableProp, false)
+
+    -- Keep session reference current
+    session.table.prop  = currentTableProp
+    session.table.model = newModel
 end
 
--- Register command
-if Config.Creator.enabled then
-    RegisterCommand(Config.Creator.command, function()
-        StartCreator()
-    end, false)
-    
-    TriggerEvent('chat:addSuggestion', '/' .. Config.Creator.command, 'Open the minigame creator')
+-- ─── Menus ────────────────────────────────────────────────────────────────────
+
+local ShowMainMenu
+local ShowTableMenu
+
+ShowMainMenu = function()
+    local tableLabel = (session.table.placed and '✓ ' or '') .. 'Table'
+    local tableDesc  = session.table.placed
+        and ('Model: ' .. tostring(session.table.model))
+        or  'Place the table prop'
+
+    lib.registerContext({
+        id      = 'nt_creator_main',
+        title   = 'Minigame Creator',
+        options = {
+            {
+                title       = 'Name: ' .. session.name,
+                description = 'Click to rename',
+                icon        = 'tag',
+                onSelect    = function()
+                    local result = lib.inputDialog('Minigame Name', {
+                        { type = 'input', label = 'Name', default = session.name, required = true }
+                    })
+                    if result and result[1] and result[1] ~= '' then
+                        session.name = result[1]
+                    end
+                    ShowMainMenu()
+                end,
+            },
+            {
+                title       = tableLabel,
+                description = tableDesc,
+                icon        = 'table',
+                onSelect    = function()
+                    if session.table.placed then
+                        ShowTableMenu()
+                    else
+                        suppressClose = true
+                        lib.hideContext()
+                        StartTablePlacement()
+                    end
+                end,
+            },
+            {
+                title       = 'Item',
+                description = 'Coming soon',
+                icon        = 'box-open',
+                disabled    = true,
+            },
+            {
+                title       = 'Camera',
+                description = 'Coming soon',
+                icon        = 'camera',
+                disabled    = true,
+            },
+        },
+        onClose = function()
+            if suppressClose then
+                suppressClose = false
+                return
+            end
+            ExitCreator()
+        end,
+    })
+
+    lib.showContext('nt_creator_main')
 end
 
--- Exports
-exports('StartCreator', StartCreator)
-exports('IsCreatorActive', IsCreatorActive)
+ShowTableMenu = function()
+    lib.registerContext({
+        id      = 'nt_creator_table',
+        title   = '✓ Table',
+        menu    = 'nt_creator_main',
+        options = {
+            {
+                title       = 'Edit',
+                description = 'Move the table prop with the gizmo',
+                icon        = 'pencil',
+                onSelect    = function()
+                    suppressClose = true
+                    lib.hideContext()
+                    EditTable()
+                end,
+            },
+            {
+                title       = 'Remove',
+                description = 'Delete the placed table',
+                icon        = 'trash',
+                onSelect    = function()
+                    RemoveTable()
+                    ShowMainMenu()
+                end,
+            },
+        },
+    })
+
+    lib.showContext('nt_creator_table')
+end
+
+-- ─── Table placement ──────────────────────────────────────────────────────────
+
+function StartTablePlacement()
+    local tableProps = Config.Props.table_props
+    if not tableProps or #tableProps == 0 then
+        print('[nt_3dminigames] StartTablePlacement: Config.Props.table_props is empty')
+        ShowMainMenu()
+        return
+    end
+
+    currentTableModelIndex = 1
+    local ped    = PlayerPedId()
+    local origin = GetEntityCoords(ped)
+    local fwd    = GetEntityForwardVector(ped)
+    local spawnPos = origin + fwd * 2.0
+
+    currentTableProp  = Props.Spawn(tableProps[1], spawnPos, vector3(0, 0, 0))
+    -- Unfreeze so SetEntityCoords can move it during cursor-follow
+    FreezeEntityPosition(currentTableProp, false)
+
+    session.table.prop  = currentTableProp
+    session.table.model = tableProps[1]
+
+    isPlacingTable = true
+    Cursor.Enable(true)
+
+    lib.showTextUI('[LMB] Confirm   [Scroll ↕] Cycle model   [BACKSPACE] Cancel', {
+        position = 'left-center',
+        icon     = 'arrows-up-down-left-right',
+    })
+
+    CreateThread(function()
+        while isPlacingTable do
+            Wait(0)
+
+            Cursor.DisableControls()
+            DisableControlAction(0, 14, true)   -- scroll up
+            DisableControlAction(0, 15, true)   -- scroll down
+            Cursor.Draw()
+
+            -- Prop follows cursor
+            if currentTableProp and DoesEntityExist(currentTableProp) then
+                local hit, coords = Raycast.FromCursor(50.0)
+                if hit and coords then
+                    SetEntityCoords(currentTableProp, coords.x, coords.y, coords.z, false, false, false, false)
+                end
+            end
+
+            -- Scroll to cycle model (150 ms debounce)
+            local now = GetGameTimer()
+            if now - lastScrollTime > 150 then
+                if IsDisabledControlJustPressed(0, 14) then   -- scroll up
+                    lastScrollTime = now
+                    CycleTableModel(-1)
+                elseif IsDisabledControlJustPressed(0, 15) then  -- scroll down
+                    lastScrollTime = now
+                    CycleTableModel(1)
+                end
+            end
+
+            -- LMB → confirm position, hand off to gizmo
+            if IsDisabledControlJustPressed(0, Config.Controls.interact) then
+                isPlacingTable = false
+                lib.hideTextUI()
+                Cursor.Disable()
+                StartGizmoForTable()
+                return
+            end
+
+            -- BACKSPACE → cancel
+            if IsDisabledControlJustPressed(0, Config.Controls.exit) then
+                isPlacingTable = false
+                lib.hideTextUI()
+                if currentTableProp then
+                    Props.Delete(currentTableProp)
+                    currentTableProp = nil
+                end
+                session.table = { prop=nil, model=nil, coords=nil, rot=nil, placed=false }
+                Cursor.Disable()
+                Wait(0)  -- let BACKSPACE "just pressed" state clear before showing menu
+                ShowMainMenu()
+                return
+            end
+        end
+    end)
+end
+
+-- Hand off to object_gizmo for fine positioning after initial cursor placement
+function StartGizmoForTable()
+    if not currentTableProp then
+        ShowMainMenu()
+        return
+    end
+
+    CreateThread(function()
+        local result = exports.object_gizmo:useGizmo(currentTableProp)
+
+        if result then
+            session.table.coords = result.position
+            session.table.rot    = result.rotation
+            session.table.placed = true
+            FreezeEntityPosition(currentTableProp, true)
+            currentTableProp = nil
+        else
+            Props.Delete(currentTableProp)
+            currentTableProp = nil
+            session.table = { prop=nil, model=nil, coords=nil, rot=nil, placed=false }
+        end
+
+        ShowMainMenu()
+    end)
+end
+
+-- Re-open the gizmo on the already-placed table prop
+function EditTable()
+    if not session.table.prop or not DoesEntityExist(session.table.prop) then
+        session.table.placed = false
+        ShowMainMenu()
+        return
+    end
+
+    -- Unfreeze so gizmo can move it
+    FreezeEntityPosition(session.table.prop, false)
+
+    CreateThread(function()
+        local result = exports.object_gizmo:useGizmo(session.table.prop)
+
+        if result then
+            session.table.coords = result.position
+            session.table.rot    = result.rotation
+            FreezeEntityPosition(session.table.prop, true)
+        else
+            -- Restore original position on failure
+            if session.table.prop and DoesEntityExist(session.table.prop) then
+                SetEntityCoords(session.table.prop, session.table.coords.x, session.table.coords.y, session.table.coords.z, false, false, false, false)
+                SetEntityRotation(session.table.prop, session.table.rot.x, session.table.rot.y, session.table.rot.z, 2, true)
+                FreezeEntityPosition(session.table.prop, true)
+            end
+        end
+
+        ShowMainMenu()
+    end)
+end
+
+function RemoveTable()
+    if session.table.prop and DoesEntityExist(session.table.prop) then
+        Props.Delete(session.table.prop)
+    end
+    currentTableProp = nil
+    session.table = { prop=nil, model=nil, coords=nil, rot=nil, placed=false }
+end
+
+-- ─── Entry point ──────────────────────────────────────────────────────────────
+
+if Config.Creator and Config.Creator.enabled == false then return end
+
+RegisterCommand('ntcreator', function()
+    if isCreatorActive then
+        -- onClose may not have fired (e.g. ESC intercepted by pause menu);
+        -- re-show the menu to recover rather than blocking the user.
+        if not isPlacingTable then
+            ShowMainMenu()
+        end
+        return
+    end
+
+    isCreatorActive = true
+    session         = NewSession()
+
+    ShowMainMenu()
+end, false)
+
+TriggerEvent('chat:addSuggestion', '/ntcreator', 'Open the minigame creator')

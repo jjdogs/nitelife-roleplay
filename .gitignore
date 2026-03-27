@@ -24,3 +24,4 @@ desktop.ini
 secrets.cfg
 server.cfg.bkp
 autopush.log
+*.claude

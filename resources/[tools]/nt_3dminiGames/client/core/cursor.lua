@@ -170,27 +170,25 @@ function Cursor.RotationToUp(rot)
     )
 end
 
---- Draw cursor sprite on screen (for visual feedback)
----@param sprite string|nil Sprite name (default 'mp_lobby_textures', 'cross_line')
+--- Draw cursor crosshair on screen (for visual feedback)
+---@param sprite string|nil Unused — kept for API compatibility
 ---@param scale number|nil Scale multiplier (default 1.0)
 ---@param color table|nil {r, g, b, a} (default white)
 function Cursor.Draw(sprite, scale, color)
     if not cursorEnabled then return end
-    
+
     scale = scale or 1.0
-    color = color or { r = 255, g = 255, b = 255, a = 255 }
-    
+    color = color or { r = 255, g = 255, b = 255, a = 220 }
+
     local pos = Cursor.GetScreenPosition()
-    
-    -- Draw simple crosshair
-    DrawSprite(
-        'mp_lobby_textures',
-        sprite or 'cross_line',
-        pos.x, pos.y,
-        0.02 * scale, 0.035 * scale,
-        0.0,
-        color.r, color.g, color.b, color.a
-    )
+    local ar = GetAspectRatio(false)
+
+    -- Draw crosshair using DrawRect — no texture dict required
+    local arm = 0.013 * scale       -- half-length of each arm
+    local thick = 0.0018 * scale    -- arm thickness
+
+    DrawRect(pos.x, pos.y, thick / ar, arm * 2.0, color.r, color.g, color.b, color.a)  -- vertical
+    DrawRect(pos.x, pos.y, arm * 2.0, thick,       color.r, color.g, color.b, color.a)  -- horizontal
 end
 
 --- Disable player controls while cursor is active
