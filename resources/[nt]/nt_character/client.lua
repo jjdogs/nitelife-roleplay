@@ -36,8 +36,9 @@ local function loadAndSendCharacters()
 end
 
 local function openNUI(screen)
-    nuiOpen = true
+    print('[nt_character] openNUI function executing')
     SetNuiFocus(true, true)
+    nuiOpen = true
     SendNUIMessage({ action = 'open', screen = screen or 'menu' })
     loadAndSendCharacters()
 end
@@ -216,28 +217,37 @@ end)
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     CreateThread(function()
+        print('[nt_character] onClientResourceStart fired, waiting for qbx_core...')
         -- Wait for qbx_core to be ready
         while GetResourceState('qbx_core') ~= 'started' do
             Wait(500)
         end
+        print('[nt_character] qbx_core ready, shutting down loading screen...')
         Wait(1000)
+        print('[nt_character] About to shutdown loading screen')
         ShutdownLoadingScreen()
         ShutdownLoadingScreenNui()
+        print('[nt_character] Loading screen shut down')
         Wait(500)
+        print('[nt_character] About to open NUI')
         openNUI()
+        print('[nt_character] openNUI called')
     end)
 end)
 
 -- ── External character selection (qbx_core) ──────────────────────────────────
 
 AddEventHandler('qbx_core:client:startCharacterSelection', function()
+    print('[nt_character] qbx_core:client:startCharacterSelection fired')
+    print('[nt_character] About to shutdown loading screen')
     ShutdownLoadingScreen()
     ShutdownLoadingScreenNui()
+    print('[nt_character] Loading screen shut down')
 
     CreateThread(function()
         Wait(500)
+        print('[nt_character] About to open NUI')
         openNUI()
-        ShutdownLoadingScreen()
-        ShutdownLoadingScreenNui()
+        print('[nt_character] openNUI called')
     end)
 end)
