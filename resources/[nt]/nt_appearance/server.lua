@@ -52,3 +52,71 @@ AddEventHandler('nt_appearance:saveAppearance', function(citizenid, model, skinJ
     print('[nt_appearance] Saved appearance for ' .. citizenid)
     TriggerClientEvent('nt_appearance:appearanceSaved', src)
 end)
+
+-- ── Outfits ────────────────────────────────────────────────────────────────────
+
+local function getOutfitList(citizenid)
+    return MySQL.query.await(
+        'SELECT id, outfitname, components, props FROM player_outfits WHERE citizenid = ? ORDER BY id ASC',
+        { citizenid }
+    ) or {}
+end
+
+RegisterNetEvent('nt_appearance:getOutfits')
+AddEventHandler('nt_appearance:getOutfits', function(citizenid)
+    local src     = source
+    local license = GetPlayerLicense(src)
+    if not license then return end
+
+    local char = MySQL.single.await(
+        'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
+        { citizenid, license }
+    )
+    if not char then
+        print('[nt_appearance] WARNING: unauthorized getOutfits for ' .. tostring(citizenid) .. ' by ' .. license)
+        return
+    end
+
+    TriggerClientEvent('nt_appearance:receiveOutfits', src, getOutfitList(citizenid))
+end)
+
+RegisterNetEvent('nt_appearance:saveOutfit')
+AddEventHandler('nt_appearance:saveOutfit', function(citizenid, outfitname, componentsJson, propsJson, model)
+    local src     = source
+    local license = GetPlayerLicense(src)
+    if not license then return end
+
+    local char = MySQL.single.await(
+        'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
+        { citizenid, license }
+    )
+    if not char then
+        print('[nt_appearance] WARNING: unauthorized saveOutfit for ' .. tostring(citizenid) .. ' by ' .. license)
+        return
+    end
+
+    MySQL.insert.await(
+        'INSERT INTO player_outfits (citizenid, outfitname, model, components, props) VALUES (?, ?, ?, ?, ?)',
+        { citizenid, outfitname, model or 'mp_m_freemode_01', componentsJson, propsJson }
+    )
+    print('[nt_appearance] Saved outfit "' .. outfitname .. '" for ' .. citizenid)
+
+    TriggerClientEvent('nt_appearance:receiveOutfits', src, getOutfitList(citizenid))
+end)
+
+RegisterNetEvent('nt_appearance:deleteOutfit')
+AddEventHandler('nt_appearance:deleteOutfit', function(outfitId, citizenid)
+    local src     = source
+    local license = GetPlayerLicense(src)
+    if not license then return end
+
+    print('[nt_appearance] Deleting outfit id: ' .. tostring(outfitId) .. ' for citizenid: ' .. tostring(citizenid))
+
+    MySQL.query.await(
+        'DELETE FROM player_outfits WHERE id = ? AND citizenid = ?',
+        { outfitId, citizenid }
+    )
+    print('[nt_appearance] Deleted outfit id=' .. tostring(outfitId) .. ' for ' .. tostring(citizenid))
+
+    TriggerClientEvent('nt_appearance:receiveOutfits', src, getOutfitList(citizenid))
+end)

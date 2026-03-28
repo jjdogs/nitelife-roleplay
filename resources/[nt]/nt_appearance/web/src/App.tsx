@@ -32,6 +32,8 @@ const CATEGORIES = [
   { id: 'hair',        icon: '✦', label: 'Hair' },
   { id: 'clothing',    icon: '👕', label: 'Clothing' },
   { id: 'props',       icon: '👜', label: 'Props' },
+  { id: 'overlays',    icon: '◉', label: 'Overlays' },
+  { id: 'outfits',     icon: '☰', label: 'Outfits' },
   { id: 'tattoos',     icon: '∧', label: 'Tattoos' },
 ]
 
@@ -55,6 +57,21 @@ const PROP_SLOTS = [
   { id: 7, label: 'Bracelet' },
 ]
 
+const OVERLAYS = [
+  { id: 0,  key: 'blemishes',       label: 'Blemishes',       maxStyles: 23, hasColor: false, maleOnly: false },
+  { id: 1,  key: 'beard',           label: 'Beard',           maxStyles: 28, hasColor: true,  maleOnly: true  },
+  { id: 2,  key: 'eyebrows',        label: 'Eyebrows',        maxStyles: 33, hasColor: true,  maleOnly: false },
+  { id: 3,  key: 'ageing',          label: 'Ageing',          maxStyles: 14, hasColor: false, maleOnly: false },
+  { id: 4,  key: 'makeUp',          label: 'Make-up',         maxStyles: 74, hasColor: false, maleOnly: false },
+  { id: 5,  key: 'blush',           label: 'Blush',           maxStyles: 6,  hasColor: true,  maleOnly: false },
+  { id: 6,  key: 'complexion',      label: 'Complexion',      maxStyles: 11, hasColor: false, maleOnly: false },
+  { id: 7,  key: 'sunDamage',       label: 'Sun Damage',      maxStyles: 10, hasColor: false, maleOnly: false },
+  { id: 8,  key: 'lipstick',        label: 'Lipstick',        maxStyles: 9,  hasColor: true,  maleOnly: false },
+  { id: 9,  key: 'moleAndFreckles', label: 'Mole / Freckles', maxStyles: 17, hasColor: false, maleOnly: false },
+  { id: 10, key: 'chestHair',       label: 'Chest Hair',      maxStyles: 16, hasColor: true,  maleOnly: true  },
+  { id: 11, key: 'bodyBlemishes',   label: 'Body Blemishes',  maxStyles: 11, hasColor: false, maleOnly: false },
+]
+
 // ── Types ───────────────────────────────────────────────────────────────────
 
 interface HeadBlend {
@@ -72,6 +89,20 @@ interface AppearanceState {
 }
 
 interface DrawableTex { drawable: number; texture: number }
+
+interface OverlayState {
+  style: number
+  opacity: number
+  color: number
+  secondColor: number
+}
+
+interface Outfit {
+  id: number
+  outfitname: string
+  components: string
+  props: string
+}
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -107,8 +138,8 @@ function NumberGrid({
 }
 
 function MixSlider({
-  label, value, leftLabel, rightLabel, onChange,
-}: { label: string; value: number; leftLabel: string; rightLabel: string; onChange: (v: number) => void }) {
+  label, value, leftLabel, rightLabel, onChange, max = '1',
+}: { label: string; value: number; leftLabel: string; rightLabel: string; onChange: (v: number) => void; max?: string }) {
   return (
     <div className="mb-4">
       <div className="flex justify-between mb-1.5">
@@ -118,7 +149,7 @@ function MixSlider({
               className="text-[9px] tabular-nums">{value.toFixed(2)}</span>
       </div>
       <input
-        type="range" min="0" max="1" step="0.01" value={value}
+        type="range" min="0" max={max} step="0.01" value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
         className="nt-slider"
       />
@@ -142,7 +173,7 @@ function FeatureSlider({
               className="text-[9px] tabular-nums">{value.toFixed(2)}</span>
       </div>
       <input
-        type="range" min="-1" max="0.99" step="0.01" value={value}
+        type="range" min="-0.99" max="0.99" step="0.01" value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
         className="nt-slider"
       />
@@ -212,6 +243,7 @@ function App() {
   const [activeCategory, setActiveCategory]   = useState<string | null>(null)
   const [appearanceReady, setAppearanceReady] = useState(false)
   const [saving, setSaving]                   = useState(false)
+  const [currentGender, setCurrentGender]     = useState(0)  // 0=male 1=female
 
   // Hair sub-tab
   const [hairTab, setHairTab] = useState<'model' | 'color' | 'highlight'>('model')
@@ -241,6 +273,22 @@ function App() {
     6: { drawable: -1, texture: 0 },
     7: { drawable: -1, texture: 0 },
   })
+
+  // Overlays state
+  const [activeOverlay, setActiveOverlay] = useState(0)
+  const [overlays, setOverlays] = useState<Record<number, OverlayState>>(() => {
+    const init: Record<number, OverlayState> = {}
+    for (const o of OVERLAYS) init[o.id] = { style: 255, opacity: 0, color: 0, secondColor: 0 }
+    return init
+  })
+
+  // Eye color state (-1 = default/game default)
+  const [eyeColor, setEyeColor] = useState(-1)
+
+  // Outfits state
+  const [outfits, setOutfits]             = useState<Outfit[]>([])
+  const [outfitName, setOutfitName]       = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
 
   const lastMouseRef = useRef({ x: 0, y: 0 })
 
@@ -289,11 +337,22 @@ function App() {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       const data = e.data
-      if (data.action === 'open')  setVisible(true)
-      if (data.action === 'close') { setVisible(false); setSaving(false); setAppearanceReady(false) }
+      if (data.action === 'open') setVisible(true)
+      if (data.action === 'close') {
+        setVisible(false)
+        setSaving(false)
+        setAppearanceReady(false)
+        setOutfits([])
+        setDeleteConfirm(null)
+        setOutfitName('')
+      }
       if (data.type === 'setConfig') {
         setPanelPosition(data.panelPosition ?? 'right')
         if (data.appearanceReady) setAppearanceReady(true)
+        if (data.gender !== undefined) setCurrentGender(data.gender)
+      }
+      if (data.type === 'setOutfits') {
+        setOutfits(data.outfits ?? [])
       }
     }
     window.addEventListener('message', handler)
@@ -312,9 +371,8 @@ function App() {
   const updateFaceFeature = (index: number, value: number) =>
     setAppearance(prev => {
       const faceFeatures = [...prev.faceFeatures]
-      const clamped = Math.max(-1.0, Math.min(0.99, value))
-      faceFeatures[index] = clamped
-      nuiFetch('setFaceFeature', { index, value: clamped })
+      faceFeatures[index] = value
+      nuiFetch('setFaceFeature', { index, value })
       return { ...prev, faceFeatures }
     })
 
@@ -335,6 +393,20 @@ function App() {
   const updateProp = (prop: number, drawable: number, texture: number) => {
     nuiFetch('setProp', { prop, drawable, texture })
     setPedProps(prev => ({ ...prev, [prop]: { drawable, texture } }))
+  }
+
+  const updateOverlay = (id: number, patch: Partial<OverlayState>) => {
+    setOverlays(prev => {
+      const current = prev[id] ?? { style: 255, opacity: 0, color: 0, secondColor: 0 }
+      const updated = { ...current, ...patch }
+      nuiFetch('setHeadOverlay', { overlay: id, ...updated })
+      return { ...prev, [id]: updated }
+    })
+  }
+
+  const updateEyeColor = (color: number) => {
+    setEyeColor(color)
+    nuiFetch('setEyeColor', { color })
   }
 
   // ── Tab content ───────────────────────────────────────────────────────────
@@ -377,6 +449,22 @@ function App() {
       case 'face':
         return (
           <div className="flex-1 overflow-y-auto px-4 py-3">
+            <SectionLabel>Eye Color</SectionLabel>
+            <button
+              onClick={() => updateEyeColor(-1)}
+              style={eyeColor === -1
+                ? { color: '#ffffff', background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.35)' }
+                : { color: 'rgba(255,255,255,0.40)' }
+              }
+              className={`w-full mb-2 py-1.5 rounded text-[9px] tracking-[0.10em] uppercase border transition-all duration-100 ${
+                eyeColor === -1 ? '' : 'border-white/8 bg-white/[0.03] hover:text-white/65'
+              }`}
+            >
+              Default
+            </button>
+            <NumberGrid count={32} active={eyeColor} onSelect={updateEyeColor} />
+            <div className="border-t border-white/8 mb-3 mt-1" />
+            <SectionLabel>Face Features</SectionLabel>
             {FACE_FEATURES.map((label, i) => (
               <FeatureSlider
                 key={i}
@@ -473,7 +561,6 @@ function App() {
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {propSubTab === 'model' && (
                 <>
-                  {/* None option */}
                   <button
                     onClick={() => updateProp(activePropSlot, -1, 0)}
                     style={slot.drawable === -1
@@ -505,6 +592,197 @@ function App() {
                    style={{ color: 'rgba(255,255,255,0.25)' }}>
                   Select a model first
                 </p>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      case 'overlays': {
+        const visibleOverlays = OVERLAYS.filter(o => !o.maleOnly || currentGender === 0)
+        const activeOv  = OVERLAYS.find(o => o.id === activeOverlay)
+        const ovState   = overlays[activeOverlay] ?? { style: 255, opacity: 0, color: 0, secondColor: 0 }
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <SlotStrip
+              slots={visibleOverlays.map(o => ({ id: o.id, label: o.label }))}
+              active={activeOverlay}
+              onSelect={id => setActiveOverlay(id)}
+            />
+            {activeOv && (
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {/* None */}
+                <button
+                  onClick={() => updateOverlay(activeOverlay, { style: 255, opacity: 0 })}
+                  style={ovState.style === 255
+                    ? { color: '#ffffff', background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.35)' }
+                    : { color: 'rgba(255,255,255,0.40)' }
+                  }
+                  className={`w-full mb-3 py-1.5 rounded text-[9px] tracking-[0.10em] uppercase border transition-all duration-100 ${
+                    ovState.style === 255 ? '' : 'border-white/8 bg-white/[0.03] hover:text-white/65'
+                  }`}
+                >
+                  None
+                </button>
+
+                <SectionLabel>Style</SectionLabel>
+                <NumberGrid
+                  count={activeOv.maxStyles}
+                  active={ovState.style}
+                  onSelect={i => updateOverlay(activeOverlay, {
+                    style: i,
+                    opacity: ovState.opacity > 0 ? ovState.opacity : 0.99,
+                  })}
+                />
+
+                {ovState.style !== 255 && (
+                  <MixSlider
+                    label="Opacity"
+                    value={ovState.opacity}
+                    leftLabel="0" rightLabel="0.99"
+                    max="0.99"
+                    onChange={v => updateOverlay(activeOverlay, { opacity: v })}
+                  />
+                )}
+
+                {activeOv.hasColor && ovState.style !== 255 && (
+                  <>
+                    <SectionLabel>Color</SectionLabel>
+                    <NumberGrid
+                      count={64}
+                      active={ovState.color}
+                      onSelect={i => updateOverlay(activeOverlay, { color: i })}
+                    />
+                    <SectionLabel>Secondary Color</SectionLabel>
+                    <NumberGrid
+                      count={64}
+                      active={ovState.secondColor}
+                      onSelect={i => updateOverlay(activeOverlay, { secondColor: i })}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      case 'outfits': {
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Save new outfit */}
+            <div className="px-4 py-3 border-b border-white/8 flex-shrink-0">
+              <SectionLabel>Save Current Outfit</SectionLabel>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={outfitName}
+                  onChange={e => setOutfitName(e.target.value)}
+                  placeholder="Outfit name..."
+                  className="flex-1 bg-white/[0.06] border border-white/10 rounded px-2 py-1.5 text-[10px] outline-none focus:border-white/25"
+                  style={{ color: 'rgba(255,255,255,0.80)' }}
+                />
+                <button
+                  disabled={!outfitName.trim()}
+                  onClick={() => {
+                    if (!outfitName.trim()) return
+                    const components = Object.entries(clothing).map(([id, dt]) => ({
+                      component_id: parseInt(id), drawable: dt.drawable, texture: dt.texture,
+                    }))
+                    const props = Object.entries(pedProps).map(([id, dt]) => ({
+                      prop_id: parseInt(id), drawable: dt.drawable, texture: dt.texture,
+                    }))
+                    nuiFetch('saveOutfit', { name: outfitName, components, props })
+                    setOutfitName('')
+                  }}
+                  className={`px-3 py-1.5 rounded text-[9px] tracking-wide border transition-all duration-100 ${
+                    outfitName.trim()
+                      ? 'bg-white/15 border-white/30 hover:bg-white/20 cursor-pointer'
+                      : 'bg-white/[0.04] border-white/8 cursor-not-allowed'
+                  }`}
+                  style={{ color: outfitName.trim() ? '#ffffff' : 'rgba(255,255,255,0.25)' }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            {/* Outfit list */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {outfits.length === 0 ? (
+                <p className="text-[9px] text-center mt-6"
+                   style={{ color: 'rgba(255,255,255,0.25)' }}>
+                  No saved outfits
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {outfits.map(outfit => (
+                    <div
+                      key={outfit.id}
+                      className="rounded border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                    >
+                      <p className="text-[10px] font-medium mb-2"
+                         style={{ color: 'rgba(255,255,255,0.80)' }}>
+                        {outfit.outfitname}
+                      </p>
+                      {deleteConfirm === outfit.id ? (
+                        <div className="flex gap-1.5 items-center">
+                          <span className="flex-1 text-[9px]"
+                                style={{ color: 'rgba(255,255,255,0.40)' }}>
+                            Delete?
+                          </span>
+                          <button
+                            onClick={() => {
+                              nuiFetch('deleteOutfit', { id: outfit.id })
+                              setDeleteConfirm(null)
+                              setOutfits(prev => prev.filter(o => o.id !== outfit.id))
+                            }}
+                            className="px-2 py-1 rounded text-[8px] border border-red-400/40 bg-red-500/10 hover:bg-red-500/20 cursor-pointer transition-all"
+                            style={{ color: 'rgba(255,100,100,0.80)' }}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="px-2 py-1 rounded text-[8px] border border-white/12 bg-white/[0.04] hover:bg-white/[0.09] cursor-pointer transition-all"
+                            style={{ color: 'rgba(255,255,255,0.50)' }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => {
+                              type CompEntry = { component_id: number; drawable: number; texture: number }
+                              type PropEntry = { prop_id: number; drawable: number; texture: number }
+                              const comps    = JSON.parse(outfit.components) as CompEntry[]
+                              const propsArr = JSON.parse(outfit.props)      as PropEntry[]
+                              const newClothing = { ...clothing }
+                              for (const c of comps) newClothing[c.component_id] = { drawable: c.drawable, texture: c.texture }
+                              setClothing(newClothing)
+                              const newProps = { ...pedProps }
+                              for (const p of propsArr) newProps[p.prop_id] = { drawable: p.drawable, texture: p.texture }
+                              setPedProps(newProps)
+                              nuiFetch('loadOutfit', { components: comps, props: propsArr })
+                            }}
+                            className="flex-1 py-1 rounded text-[9px] border border-white/15 bg-white/[0.06] hover:bg-white/[0.12] cursor-pointer transition-all"
+                            style={{ color: 'rgba(255,255,255,0.70)' }}
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(outfit.id)}
+                            className="px-2.5 py-1 rounded text-[9px] border border-white/8 bg-white/[0.03] hover:bg-white/[0.08] cursor-pointer transition-all"
+                            style={{ color: 'rgba(255,255,255,0.35)' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -580,9 +858,9 @@ function App() {
           </p>
         </div>
 
-        {/* Category icons */}
+        {/* Category icons — 4 columns to fit 8 categories in 2 rows */}
         <div className="px-4 py-4 border-b border-white/8 flex-shrink-0">
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {CATEGORIES.map(cat => (
               <button
                 key={cat.id}

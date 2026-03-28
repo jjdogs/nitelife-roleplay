@@ -13,6 +13,10 @@ local currentAppearance = {
     hair          = 0,
     hairColor     = 0,
     hairHighlight = 0,
+    headOverlays  = {},
+    eyeColor      = -1,
+    clothing      = {},
+    props         = {},
 }
 
 -- ── Model helper ──────────────────────────────────────────────────────────────
@@ -81,6 +85,10 @@ local function openAppearanceNUI()
         hair          = 0,
         hairColor     = 0,
         hairHighlight = 0,
+        headOverlays  = {},
+        eyeColor      = -1,
+        clothing      = {},
+        props         = {},
     }
 
     SetEntityCoords(ped, loc.x, loc.y, found and groundZ or loc.z, false, false, false, false)
@@ -125,7 +133,13 @@ local function openAppearanceNUI()
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
     SendNUIMessage({ action = 'open' })
-    SendNUIMessage({ type = 'setConfig', panelPosition = Config.PanelPosition, appearanceReady = true })
+    SendNUIMessage({ type = 'setConfig', panelPosition = Config.PanelPosition, appearanceReady = true, gender = currentGender })
+
+    -- Fetch saved outfits for this character (if opened from character creation)
+    if currentCitizenId then
+        TriggerServerEvent('nt_appearance:getOutfits', currentCitizenId)
+    end
+
     print('[nt_appearance] Opened appearance editor')
 
     -- 5. Camera position tick (input handled via NUI callbacks)
@@ -215,7 +229,13 @@ end)
 
 -- ── Commands ──────────────────────────────────────────────────────────────────
 
-RegisterCommand('ntappearance', function()
+RegisterCommand('ntappearance', function(_, args)
+    currentCitizenId = args[1] or nil
+    if not currentCitizenId then
+        local playerData = exports['qbx_core']:GetPlayerData()
+        currentCitizenId = playerData and playerData.citizenid or nil
+    end
+    currentGender = tonumber(args[2]) or 0
     CreateThread(function()
         openAppearanceNUI()
     end)
@@ -237,6 +257,12 @@ RegisterNUICallback('exitAppearance', function(_, cb)
     -- Reset hair
     SetPedComponentVariation(ped, 2, 0, 0, 0)
     SetPedHairColor(ped, 0, 0)
+    -- Reset all head overlays
+    for i = 0, 11 do
+        SetPedHeadOverlay(ped, i, 255, 0.0)
+    end
+    -- Reset eye color
+    SetPedEyeColor(ped, -1)
     -- Reset all clothing components to defaults
     SetPedDefaultComponentVariation(ped)
     -- Clear all props
@@ -332,6 +358,83 @@ RegisterNUICallback('setHairColor', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('setHeadOverlay', function(data, cb)
+    local ped = PlayerPedId()
+    if not currentAppearance.headOverlays then currentAppearance.headOverlays = {} end
+    currentAppearance.headOverlays[data.overlay] = {
+        style       = data.style,
+        opacity     = data.opacity,
+        color       = data.color,
+        secondColor = data.secondColor,
+    }
+    if data.style == 255 then
+        SetPedHeadOverlay(ped, data.overlay, 255, 0.0)
+    else
+        SetPedHeadOverlay(ped, data.overlay, data.style, data.opacity)
+        SetPedHeadOverlayColor(ped, data.overlay, 1, data.color, data.secondColor)
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('setEyeColor', function(data, cb)
+    local ped = PlayerPedId()
+    currentAppearance.eyeColor = data.color
+    SetPedEyeColor(ped, data.color)
+    cb('ok')
+end)
+
+-- ── Outfit callbacks ───────────────────────────────────────────────────────────
+
+RegisterNUICallback('getOutfits', function(_, cb)
+    if currentCitizenId then
+        TriggerServerEvent('nt_appearance:getOutfits', currentCitizenId)
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('saveOutfit', function(data, cb)
+    if not currentCitizenId then cb('ok') return end
+    local model     = currentGender == 1 and 'mp_f_freemode_01' or 'mp_m_freemode_01'
+    local compsJson = json.encode(data.components)
+    local propsJson = json.encode(data.props)
+    TriggerServerEvent('nt_appearance:saveOutfit', currentCitizenId, data.name, compsJson, propsJson, model)
+    cb('ok')
+end)
+
+RegisterNUICallback('loadOutfit', function(data, cb)
+    local ped = PlayerPedId()
+    if data.components then
+        for _, comp in ipairs(data.components) do
+            SetPedComponentVariation(ped, comp.component_id, comp.drawable, comp.texture, 0)
+            if not currentAppearance.clothing then currentAppearance.clothing = {} end
+            currentAppearance.clothing[comp.component_id] = { drawable = comp.drawable, texture = comp.texture }
+        end
+    end
+    if data.props then
+        for _, prop in ipairs(data.props) do
+            if prop.drawable == -1 then
+                ClearPedProp(ped, prop.prop_id)
+            else
+                SetPedPropIndex(ped, prop.prop_id, prop.drawable, prop.texture, true)
+            end
+            if not currentAppearance.props then currentAppearance.props = {} end
+            currentAppearance.props[prop.prop_id] = { drawable = prop.drawable, texture = prop.texture }
+        end
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('deleteOutfit', function(data, cb)
+    if not currentCitizenId then cb('ok') return end
+    TriggerServerEvent('nt_appearance:deleteOutfit', data.id, currentCitizenId)
+    cb('ok')
+end)
+
+RegisterNetEvent('nt_appearance:receiveOutfits')
+AddEventHandler('nt_appearance:receiveOutfits', function(outfits)
+    SendNUIMessage({ type = 'setOutfits', outfits = outfits })
+end)
+
 -- ── Save appearance ────────────────────────────────────────────────────────────
 
 local faceFeatureNames = {
@@ -357,6 +460,21 @@ local faceFeatureNames = {
     [19] = 'neckThickness',
 }
 
+local overlayNames = {
+    [0]  = 'blemishes',
+    [1]  = 'beard',
+    [2]  = 'eyebrows',
+    [3]  = 'ageing',
+    [4]  = 'makeUp',
+    [5]  = 'blush',
+    [6]  = 'complexion',
+    [7]  = 'sunDamage',
+    [8]  = 'lipstick',
+    [9]  = 'moleAndFreckles',
+    [10] = 'chestHair',
+    [11] = 'bodyBlemishes',
+}
+
 RegisterNUICallback('saveAppearance', function(_, cb)
     if not currentCitizenId then
         print('[nt_appearance] saveAppearance: no currentCitizenId — editor was opened via command, not nt_character')
@@ -372,6 +490,21 @@ RegisterNUICallback('saveAppearance', function(_, cb)
         local name = faceFeatureNames[i]
         if name then
             faceFeatures[name] = currentAppearance.faceFeatures[i] or 0.0
+        end
+    end
+
+    -- Build head overlays from stored state (illenium-appearance format)
+    local headOverlays = {}
+    for i = 0, 11 do
+        local name = overlayNames[i]
+        if name then
+            local ov = currentAppearance.headOverlays and currentAppearance.headOverlays[i]
+            headOverlays[name] = {
+                style       = ov and ov.style       or 255,
+                opacity     = ov and ov.opacity     or 0.0,
+                color       = ov and ov.color       or 0,
+                secondColor = ov and ov.secondColor or 0,
+            }
         end
     end
 
@@ -415,20 +548,7 @@ RegisterNUICallback('saveAppearance', function(_, cb)
             thirdMix    = 0.0,
         },
         faceFeatures = faceFeatures,
-        headOverlays = {
-            blemishes       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            beard           = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            eyebrows        = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            ageing          = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            makeUp          = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            blush           = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            complexion      = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            sunDamage       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            lipstick        = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            moleAndFreckles = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            chestHair       = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-            bodyBlemishes   = { style = 0, opacity = 0, color = 0, secondColor = 0 },
-        },
+        headOverlays = headOverlays,
         hair = {
             style     = currentAppearance.hair          or 0,
             texture   = 0,

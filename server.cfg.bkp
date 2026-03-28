@@ -1,20 +1,17 @@
+exec secrets.cfg
 ## You CAN edit the following:
-endpoint_add_tcp "0.0.0.0:30120"
-endpoint_add_udp "0.0.0.0:30120"
+endpoint_add_tcp "0.0.0.0:30119"
+endpoint_add_udp "0.0.0.0:30119"
 sv_maxclients 5
-set steam_webApiKey "none"
 sets tags "qbox, nitelife, serious, roleplay"
 
 ## You MAY edit the following:
-sv_licenseKey "cfxk_GbVTggWBiFDL6CAceG6b_13pRlF"
 sv_hostname "NiteLife Roleplay"
 sets sv_projectName "NiteLife"
 sets sv_projectDesc "Serious & Immersive Roleplay for all to enjoy!"
 sets locale "en-US" # replace with your language and location code, like en-US, pt-BR, etc
 load_server_icon myLogo.png
 set sv_enforceGameBuild 3258
-set mysql_connection_string "mysql://root@localhost/NiteLife?charset=utf8mb4"
-
 # Chat config
 set resources_useSystemChat true
 set qbx_chat:joinMessage ""
@@ -58,7 +55,6 @@ setr loadscreen:externalShutdown true
 set loadscreen:primaryColor "#f1e542"
 set loadscreen:shadowColor "#1a18077f"
 
-set PROPERTIES_UPLOAD_TOKEN "MDeV3WPJFaaTlYo3A3380ldPWNc5Mcmt"
 setr game_enableDynamicDoorCreation "true"
 
 # These resources will start by default.
@@ -84,9 +80,13 @@ ensure [lation]
 ensure kq_link
 ensure kq_shellbuilder_props
 ensure kq_shellbuilder
+ensure kq_propplacer
 ensure [properties]
 ensure ps-adminmenu
+ensure object_gizmo
 ensure [tools]
+ensure [nt]
+ensure nt_appearance
 ## Permissions ##
 add_principal identifier.fivem:7140163 group.admin #oceanrp22
 exec permissions.cfg
