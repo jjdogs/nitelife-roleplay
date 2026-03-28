@@ -26,6 +26,17 @@ local function loadModel(hash)
     while not HasModelLoaded(hash) do Wait(0) end
 end
 
+-- ── Idle animation ────────────────────────────────────────────────────────────
+
+local function PlayIdleAnim(ped)
+    local animDict = currentGender == 1
+        and 'amb@world_human_stand_impatient@female@base'
+        or  'amb@world_human_stand_impatient@male@base'
+    RequestAnimDict(animDict)
+    while not HasAnimDictLoaded(animDict) do Wait(100) end
+    TaskPlayAnim(ped, animDict, 'base', 3.0, 3.0, -1, 1, 0, false, false, false)
+end
+
 -- ── Core ──────────────────────────────────────────────────────────────────────
 
 local function openAppearanceNUI()
@@ -133,7 +144,15 @@ local function openAppearanceNUI()
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
     SendNUIMessage({ action = 'open' })
-    SendNUIMessage({ type = 'setConfig', panelPosition = Config.PanelPosition, appearanceReady = true, gender = currentGender })
+    SendNUIMessage({
+        type            = 'setConfig',
+        panelPosition   = Config.PanelPosition,
+        appearanceReady = true,
+        gender          = currentGender,
+    })
+
+    -- Play idle anim in its own thread so tick setup isn't delayed
+    CreateThread(function() PlayIdleAnim(PlayerPedId()) end)
 
     -- Fetch saved outfits for this character (if opened from character creation)
     if currentCitizenId then
@@ -148,11 +167,11 @@ local function openAppearanceNUI()
             Wait(0)
             if not appearanceCam then break end
 
-            local ped       = PlayerPedId()
-            local pedCoords = GetEntityCoords(ped)
-            local camX      = pedCoords.x + math.sin(math.rad(camAngle)) * camDistance
-            local camY      = pedCoords.y + math.cos(math.rad(camAngle)) * camDistance
-            local camZ      = pedCoords.z + camHeight
+            local ped        = PlayerPedId()
+            local pedCoords  = GetEntityCoords(ped)
+            local camX       = pedCoords.x + math.sin(math.rad(camAngle)) * camDistance
+            local camY       = pedCoords.y + math.cos(math.rad(camAngle)) * camDistance
+            local camZ       = pedCoords.z + camHeight
             local lookTarget = GetOffsetFromEntityInWorldCoords(ped, 0.0, 0.0, camHeight)
 
             SetCamCoord(appearanceCam, camX, camY, camZ)
@@ -160,29 +179,47 @@ local function openAppearanceNUI()
         end
     end)
 
-    -- 6. Control disable tick (selective — do NOT use DisableAllControlActions)
+    -- 6. Control disable tick
     CreateThread(function()
         while appearanceOpen do
             Wait(0)
             -- Movement
-            DisableControlAction(0, 30, true)  -- Move LR
-            DisableControlAction(0, 31, true)  -- Move UD
-            DisableControlAction(0, 36, true)  -- Duck
+            DisableControlAction(0, 30,  true)  -- Move LR
+            DisableControlAction(0, 31,  true)  -- Move UD
+            DisableControlAction(0, 36,  true)  -- Duck
             -- Combat
-            DisableControlAction(0, 24, true)  -- Attack
-            DisableControlAction(0, 25, true)  -- Aim
-            DisableControlAction(0, 47, true)  -- Weapon
-            DisableControlAction(0, 58, true)  -- Weapon 2
-            DisableControlAction(0, 44, true)  -- Cover
-            DisableControlAction(0, 37, true)  -- Select Weapon
-            DisableControlAction(0, 23, true)  -- Melee Attack
+            DisableControlAction(0, 24,  true)  -- Attack
+            DisableControlAction(0, 25,  true)  -- Aim
+            DisableControlAction(0, 47,  true)  -- Weapon
+            DisableControlAction(0, 58,  true)  -- Weapon 2
+            DisableControlAction(0, 44,  true)  -- Cover
+            DisableControlAction(0, 37,  true)  -- Select Weapon
+            DisableControlAction(0, 23,  true)  -- Melee Attack
             -- Vehicle
-            DisableControlAction(0, 71, true)  -- Accelerate
-            DisableControlAction(0, 72, true)  -- Brake
-            -- Interaction
-            DisableControlAction(0, 51, true)  -- Context
-            DisableControlAction(0, 38, true)  -- Enter
-            DisableControlAction(0, 29, true)  -- Phone
+            DisableControlAction(0, 71,  true)  -- Accelerate
+            DisableControlAction(0, 72,  true)  -- Brake
+            -- Interaction / phone
+            DisableControlAction(0, 51,  true)  -- Context
+            DisableControlAction(0, 38,  true)  -- Enter
+            DisableControlAction(0, 29,  true)  -- Phone (B key)
+            -- Chat and frontend keys
+            DisableControlAction(0, 245, true)  -- INPUT_TALK (T - chat)
+            DisableControlAction(0, 199, true)  -- INPUT_FRONTEND_SOCIAL_CLUB
+            DisableControlAction(0, 200, true)  -- INPUT_FRONTEND_SOCIAL_CLUB_SECONDARY
+            DisableControlAction(0, 166, true)  -- INPUT_SCRIPT_PAD_LEFT
+            DisableControlAction(0, 167, true)  -- INPUT_SCRIPT_PAD_RIGHT
+            DisableControlAction(0, 168, true)  -- INPUT_SCRIPT_PAD_UP
+            DisableControlAction(0, 169, true)  -- INPUT_SCRIPT_PAD_DOWN
+            DisableControlAction(0, 182, true)  -- INPUT_FRONTEND_DOWN
+            DisableControlAction(0, 183, true)  -- INPUT_FRONTEND_UP
+            DisableControlAction(0, 184, true)  -- INPUT_FRONTEND_LEFT
+            DisableControlAction(0, 185, true)  -- INPUT_FRONTEND_RIGHT
+            DisableControlAction(0, 186, true)  -- INPUT_FRONTEND_RDOWN
+            DisableControlAction(0, 187, true)  -- INPUT_FRONTEND_RUP
+            DisableControlAction(0, 188, true)  -- INPUT_FRONTEND_RLEFT
+            DisableControlAction(0, 189, true)  -- INPUT_FRONTEND_RRIGHT
+            DisableControlAction(0, 194, true)  -- INPUT_FRONTEND_ACCEPT
+            DisableControlAction(0, 195, true)  -- INPUT_FRONTEND_CANCEL
         end
     end)
 end
@@ -205,6 +242,7 @@ local function closeAppearanceNUI()
     end
 
     local ped = PlayerPedId()
+    ClearPedTasks(ped)
     FreezeEntityPosition(ped, false)
     print('[nt_appearance] Closed appearance editor')
 end
@@ -257,6 +295,8 @@ RegisterNUICallback('exitAppearance', function(_, cb)
     -- Reset hair
     SetPedComponentVariation(ped, 2, 0, 0, 0)
     SetPedHairColor(ped, 0, 0)
+    -- Stop anim
+    ClearPedTasks(ped)
     -- Reset all head overlays
     for i = 0, 11 do
         SetPedHeadOverlay(ped, i, 255, 0.0)
@@ -290,7 +330,7 @@ RegisterNUICallback('zoomCam', function(data, cb)
     cb('ok')
 end)
 
--- ── Appearance callbacks ───────────────────────────────────────────────────
+-- ── Appearance callbacks ───────────────────────────────────────────────────────
 
 RegisterNUICallback('setHeadBlend', function(data, cb)
     local ped = PlayerPedId()
@@ -311,7 +351,6 @@ end)
 
 RegisterNUICallback('setFaceFeature', function(data, cb)
     local ped = PlayerPedId()
-    print('[nt_appearance] Face feature index: ' .. data.index .. ' value: ' .. data.value)
     currentAppearance.faceFeatures[data.index] = data.value
     SetPedFaceFeature(ped, data.index, data.value)
     cb('ok')
@@ -328,7 +367,6 @@ end)
 
 RegisterNUICallback('setClothing', function(data, cb)
     local ped = PlayerPedId()
-    print('[nt_appearance] Component ' .. data.component .. ' drawable: ' .. data.drawable .. ' texture: ' .. data.texture)
     SetPedComponentVariation(ped, data.component, data.drawable, data.texture, 0)
     if not currentAppearance.clothing then currentAppearance.clothing = {} end
     currentAppearance.clothing[data.component] = { drawable = data.drawable, texture = data.texture }
@@ -338,10 +376,8 @@ end)
 RegisterNUICallback('setProp', function(data, cb)
     local ped = PlayerPedId()
     if data.drawable == -1 then
-        print('[nt_appearance] Clearing prop ' .. data.prop)
         ClearPedProp(ped, data.prop)
     else
-        print('[nt_appearance] Prop ' .. data.prop .. ' drawable: ' .. data.drawable .. ' texture: ' .. data.texture)
         SetPedPropIndex(ped, data.prop, data.drawable, data.texture, true)
     end
     if not currentAppearance.props then currentAppearance.props = {} end
@@ -351,8 +387,7 @@ end)
 
 RegisterNUICallback('setHairColor', function(data, cb)
     local ped = PlayerPedId()
-    print('[nt_appearance] Setting hair color: ' .. data.color .. ' highlight: ' .. data.highlight)
-    currentAppearance.hairColor    = data.color
+    currentAppearance.hairColor     = data.color
     currentAppearance.hairHighlight = data.highlight
     SetPedHairColor(ped, data.color, data.highlight)
     cb('ok')
@@ -561,4 +596,119 @@ RegisterNUICallback('saveAppearance', function(_, cb)
     TriggerServerEvent('nt_appearance:saveAppearance', currentCitizenId, model, json.encode(skin))
     cb('ok')
     -- NUI closes automatically when nt_appearance:appearanceSaved fires
+end)
+
+-- ── Apply appearance ───────────────────────────────────────────────────────────
+
+local function ApplyAppearance(model, skinJson)
+    local ped = PlayerPedId()
+
+    if model then
+        local modelHash = joaat(model)
+        if IsModelInCdimage(modelHash) then
+            RequestModel(modelHash)
+            while not HasModelLoaded(modelHash) do Wait(0) end
+            SetPlayerModel(PlayerId(), modelHash)
+            Wait(150)
+            SetModelAsNoLongerNeeded(modelHash)
+            SetPedDefaultComponentVariation(PlayerPedId())
+        end
+    end
+
+    if not skinJson then return end
+    local skin = json.decode(skinJson)
+    if not skin then return end
+    ped = PlayerPedId()
+
+    -- Head blend (must come first — resets face features, so apply features after)
+    if skin.headBlend then
+        local h = skin.headBlend
+        SetPedHeadBlendData(ped,
+            h.shapeFirst  or 0, h.shapeSecond  or 0, h.shapeThird  or 0,
+            h.skinFirst   or 0, h.skinSecond   or 0, h.skinThird   or 0,
+            h.shapeMix    or 0.5, h.skinMix    or 0.5, h.thirdMix  or 0.0,
+            false
+        )
+    end
+
+    -- Face features
+    if skin.faceFeatures then
+        local featureMap = {
+            noseWidth=0,       nosePeakHigh=1,    nosePeakSize=2,    noseBoneHigh=3,
+            nosePeakLowering=4,noseBoneTwist=5,   eyeBrownHigh=6,    eyeBrownForward=7,
+            cheeksBoneHigh=8,  cheeksBoneWidth=9, cheeksWidth=10,    eyesOpening=11,
+            lipsThickness=12,  jawBoneWidth=13,   jawBoneBackSize=14,chinBoneLenght=15,
+            chinBoneLowering=16,chinBoneSize=17,  chinHole=18,       neckThickness=19,
+        }
+        for name, index in pairs(featureMap) do
+            if skin.faceFeatures[name] then
+                SetPedFaceFeature(ped, index, skin.faceFeatures[name])
+            end
+        end
+    end
+
+    -- Head overlays
+    if skin.headOverlays then
+        local overlayMap = {
+            blemishes=0, beard=1,     eyebrows=2,      ageing=3,   makeUp=4,
+            blush=5,     complexion=6,sunDamage=7,      lipstick=8,
+            moleAndFreckles=9,        chestHair=10,    bodyBlemishes=11,
+        }
+        for name, index in pairs(overlayMap) do
+            local overlay = skin.headOverlays[name]
+            if overlay then
+                SetPedHeadOverlay(ped, index, overlay.style or 0, overlay.opacity or 0.0)
+                if (overlay.color or 0) >= 0 then
+                    SetPedHeadOverlayColor(ped, index, 1, overlay.color or 0, overlay.secondColor or 0)
+                end
+            end
+        end
+    end
+
+    -- Hair (must come after head blend — SetPedHairColor requires it)
+    if skin.hair then
+        SetPedComponentVariation(ped, 2, skin.hair.style or 0, skin.hair.texture or 0, 0)
+        SetPedHairColor(ped, skin.hair.color or 0, skin.hair.highlight or 0)
+    end
+
+    -- Eye color
+    if skin.eyeColor and skin.eyeColor >= 0 then
+        SetPedEyeColor(ped, skin.eyeColor)
+    end
+
+    -- Components
+    if skin.components then
+        for _, comp in ipairs(skin.components) do
+            SetPedComponentVariation(ped, comp.component_id, comp.drawable or 0, comp.texture or 0, 0)
+        end
+    end
+
+    -- Props
+    if skin.props then
+        for _, prop in ipairs(skin.props) do
+            if prop.drawable == -1 then
+                ClearPedProp(ped, prop.prop_id)
+            else
+                SetPedPropIndex(ped, prop.prop_id, prop.drawable or 0, prop.texture or 0, true)
+            end
+        end
+    end
+end
+
+RegisterNetEvent('nt_appearance:applyAppearance')
+AddEventHandler('nt_appearance:applyAppearance', function(model, skinJson)
+    CreateThread(function()
+        ApplyAppearance(model, skinJson)
+    end)
+end)
+
+AddEventHandler('qbx_core:client:onPlayerLoaded', function()
+    local playerData = exports.qbx_core:GetPlayerData()
+    if not playerData or not playerData.citizenid then return end
+    TriggerServerEvent('nt_appearance:loadAppearance', playerData.citizenid)
+end)
+
+exports('ApplyAppearance', ApplyAppearance)
+exports('LoadAppearance', function(citizenid)
+    TriggerServerEvent('nt_appearance:loadAppearance', citizenid)
 end)

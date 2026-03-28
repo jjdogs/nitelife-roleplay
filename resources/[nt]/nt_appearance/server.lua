@@ -120,3 +120,31 @@ AddEventHandler('nt_appearance:deleteOutfit', function(outfitId, citizenid)
 
     TriggerClientEvent('nt_appearance:receiveOutfits', src, getOutfitList(citizenid))
 end)
+
+-- ── Load appearance ────────────────────────────────────────────────────────────
+
+RegisterNetEvent('nt_appearance:loadAppearance')
+AddEventHandler('nt_appearance:loadAppearance', function(citizenid)
+    local src     = source
+    local license = GetPlayerLicense(src)
+    if not license then return end
+
+    local char = MySQL.single.await(
+        'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
+        { citizenid, license }
+    )
+    if not char then return end
+
+    local skin = MySQL.single.await(
+        'SELECT model, skin FROM playerskins WHERE citizenid = ? AND active = 1',
+        { citizenid }
+    )
+
+    if not skin then
+        print('[nt_appearance] No saved appearance for ' .. citizenid)
+        TriggerClientEvent('nt_appearance:applyAppearance', src, nil, nil)
+        return
+    end
+
+    TriggerClientEvent('nt_appearance:applyAppearance', src, skin.model, skin.skin)
+end)

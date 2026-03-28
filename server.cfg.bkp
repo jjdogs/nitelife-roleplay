@@ -51,7 +51,7 @@ setr weather_disablecd true
 exec ox.cfg
 
 # loadscreen config
-setr loadscreen:externalShutdown true
+setr loadscreen:externalShutdown false
 set loadscreen:primaryColor "#f1e542"
 set loadscreen:shadowColor "#1a18077f"
 
@@ -88,7 +88,8 @@ ensure [tools]
 ensure [nt]
 ensure nt_appearance
 ## Permissions ##
-add_principal identifier.fivem:7140163 group.admin #oceanrp22
+add_principal identifier.fivem:7140163 group.admin #oceanrp22 -- fivem:5702888
+add_principal identifier.fivem:5702888 group.admin #javier
 exec permissions.cfg
 
 ## Miscellaneous ##

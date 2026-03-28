@@ -210,3 +210,34 @@ AddEventHandler('nt_character:playerReady', function()
 
     print('[nt_character] Player spawned and ready')
 end)
+
+-- ── Resource start ────────────────────────────────────────────────────────────
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    CreateThread(function()
+        -- Wait for qbx_core to be ready
+        while GetResourceState('qbx_core') ~= 'started' do
+            Wait(500)
+        end
+        Wait(1000)
+        ShutdownLoadingScreen()
+        ShutdownLoadingScreenNui()
+        Wait(500)
+        openNUI()
+    end)
+end)
+
+-- ── External character selection (qbx_core) ──────────────────────────────────
+
+AddEventHandler('qbx_core:client:startCharacterSelection', function()
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
+
+    CreateThread(function()
+        Wait(500)
+        openNUI()
+        ShutdownLoadingScreen()
+        ShutdownLoadingScreenNui()
+    end)
+end)

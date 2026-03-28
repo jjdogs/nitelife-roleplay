@@ -19,3 +19,4 @@ Config.Camera = {
 }
 
 Config.PanelPosition = 'right' -- 'left' or 'right'
+
