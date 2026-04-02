@@ -1,0 +1,309 @@
+@import url('../main.css');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ── NiteLife palette — override resource-injected CSS vars ──────────────── */
+
+:root {
+    --primary-color:   #22c55e;
+    --secondary-color: #374151;
+    --text-color:      #f0fdf4;
+    --shadow-color:    rgba(0, 0, 0, 0.6);
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+html {
+    background-color: #0a0f0a;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── Decoration layer: dot-grid + scanlines + accent line ────────────────────
+   Merged into fixed pseudo-elements so they sit ABOVE the background video
+   (position:fixed, z-index auto ≈ 0) but BELOW the content (z-index: 2).
+   body::before and body::after are both position:fixed so they participate
+   in the root stacking context at z-index: 1.
+────────────────────────────────────────────────────────────────────────── */
+
+/* Dot-grid overlay + scanlines — above bg video, below content */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        /* dot-grid */
+        repeating-linear-gradient(
+            0deg,
+            rgba(34, 197, 94, 0.04) 0px, rgba(34, 197, 94, 0.04) 1px,
+            transparent 1px, transparent 40px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(34, 197, 94, 0.04) 0px, rgba(34, 197, 94, 0.04) 1px,
+            transparent 1px, transparent 40px
+        ),
+        /* scanlines */
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 3px,
+            rgba(0, 0, 0, 0.08) 3px,
+            rgba(0, 0, 0, 0.08) 4px
+        );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Vertical accent line — 1px, 80px from right, fades in/out vertically */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 80px;
+    width: 1px;
+    height: 100vh;
+    background: linear-gradient(
+        to bottom,
+        transparent              0%,
+        rgba(34, 197, 94, 0.15) 20%,
+        rgba(34, 197, 94, 0.15) 80%,
+        transparent             100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ── Main wrapper: bottom-left layout ───────────────────────────────────── */
+
+#loadscreen-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 24px;
+    overflow: hidden;
+    z-index: 2;
+}
+
+/* REC dot — 6px red circle, below the player-count pill */
+#loadscreen-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 52px;
+    right: 22px;
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    box-shadow:
+        0 0 6px rgba(239, 68, 68, 0.8),
+        0 0 14px rgba(239, 68, 68, 0.4);
+    pointer-events: none;
+}
+
+/* Player-count pill — top-right, populated via data-players attr by JS */
+#loadscreen-wrapper::after {
+    content: '● ' attr(data-players);
+    position: absolute;
+    top: 18px;
+    right: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: #4ade80;
+    background: rgba(22, 163, 74, 0.10);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    border-radius: 4px;
+    padding: 3px 10px 3px 8px;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ── Header — server name / branding ────────────────────────────────────── */
+
+#loadscreen-wrapper > header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+#logo {
+    display: none !important;
+}
+
+/*
+ * Two-line NITE / LIFE treatment — pure CSS.
+ *
+ * font-size: 0 collapses the h1's actual text node so whatever
+ * loadscreen:serverMessage is set to doesn't appear. The display
+ * comes entirely from ::before and ::after.
+ *
+ * ::before renders "NITE\ALIFE" (CSS \A = newline, white-space: pre
+ * makes it break). A hard two-stop gradient with background-clip: text
+ * colours the top line #f0fdf4 and the bottom line #22c55e.
+ *
+ * ::after renders the tagline below at 9px IBM Plex Mono.
+ */
+#server-message {
+    font-size: 0;  /* hide the raw text node */
+    display: block;
+}
+
+/* NITE (line 1, #f0fdf4) + LIFE (line 2, #22c55e) */
+#server-message::before {
+    content: 'NITE\ALIFE';
+    display: block;
+    white-space: pre;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 88px;
+    line-height: 0.88;
+    letter-spacing: -2px;
+    /* Hard gradient split at 50%: top half = white, bottom half = green */
+    background: linear-gradient(
+        to bottom,
+        #f0fdf4  0%,
+        #f0fdf4 50%,
+        #22c55e 50%,
+        #22c55e 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Tagline — rendered separately so it can have its own color */
+#server-message::after {
+    content: 'Los Santos after dark · The city never sleeps.';
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 400;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #374151;
+    -webkit-text-fill-color: #374151;  /* override any inherited gradient fill */
+    margin-top: 14px;
+    line-height: 1;
+}
+
+/* ── Footer — loading bar area ──────────────────────────────────────────── */
+
+#loadscreen-wrapper > footer {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+/* ── Secondary bar wrapper ───────────────────────────────────────────────── */
+
+#secondary-bar-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+/* Tip / loading action — prefixed with amber // marker */
+#loading-action {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: #6b7280;
+    line-height: 1.6;
+    max-width: 420px;
+    white-space: normal;
+}
+
+#loading-action::before {
+    content: '// ';
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+#secondary-bar {
+    block-size: 2px;
+    inline-size: 100%;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+#secondary-bar::-webkit-progress-bar {
+    background: #1a2a1a;
+    border-radius: 0;
+}
+
+#secondary-bar::-webkit-progress-value {
+    background: #22c55e;
+    border-radius: 0;
+}
+
+/* ── Primary loading bar ─────────────────────────────────────────────────── */
+
+#primary-bar {
+    block-size: 2px;
+    inline-size: 100%;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+#primary-bar::-webkit-progress-bar {
+    background: #1a2a1a;
+    border-radius: 0;
+}
+
+#primary-bar::-webkit-progress-value {
+    background: #22c55e;
+    border-radius: 0;
+    /* Note: a ::after tick mark on ::-webkit-progress-value is not supported
+       by the CSS spec — the pseudo-element exists on the progress element itself
+       but cannot be positioned relative to the fill end without JS. */
+}
+
+/* ── Finishing / done state ──────────────────────────────────────────────── */
+
+#finishing-wrapper {
+    position: fixed;
+    bottom: 38px;
+    left: 38px;
+    z-index: 2;
+}
+
+#finishing-message {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    color: #f0fdf4;
+    letter-spacing: 0.04em;
+}
+
+#log-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    color: #374151;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+
+/* ── Audio controls — pin to bottom-right, override main.css centering ───── */
+
+#audio-controls {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    transform: none;
+    z-index: 10;
+}

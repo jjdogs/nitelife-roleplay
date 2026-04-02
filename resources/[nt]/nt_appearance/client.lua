@@ -40,34 +40,28 @@ end
 -- ── Core ──────────────────────────────────────────────────────────────────────
 
 local function openAppearanceNUI()
-    local loc = Config.AppearanceLocation
+    print('[nt_appearance] openAppearanceNUI called')
+
+    -- Fade to black while setting up (model swap + server call + camera init)
+    -- so there is no visible flash during the transition from either the character
+    -- selector or the open world. If nt_character already faded out this is a no-op.
+    DoScreenFadeOut(300)
+    Wait(350)
 
     -- Reset camera orbit state
     camAngle    = 0.0
     camDistance = Config.Camera.distance
     camHeight   = 0.6
 
-    -- 1. Wait for collision at destination before teleporting (prevents falling through ground)
+    -- 1. Capture current position — editor opens in-place, no teleport
     local ped = PlayerPedId()
-    SetEntityVisible(ped, false, false)
-    RequestCollisionAtCoord(loc.x, loc.y, loc.z)
-    local timeout = 0
-    while not HasCollisionLoadedAroundEntity(ped) and timeout < 100 do
-        Wait(100)
-        timeout = timeout + 1
-    end
+    local currentCoords  = GetEntityCoords(ped)
+    local currentHeading = GetEntityHeading(ped)
 
-    -- 2. Teleport slightly above ground, then snap to actual ground Z
-    SetEntityCoords(ped, loc.x, loc.y, loc.z + 2.0, false, false, false, false)
-    SetEntityHeading(ped, loc.w)
-    Wait(100)
-    local found, groundZ = GetGroundZFor_3dCoord(loc.x, loc.y, loc.z + 2.0, false)
-    if found then
-        SetEntityCoords(ped, loc.x, loc.y, groundZ, false, false, false, false)
-    end
+    SetEntityVisible(ped, false, false)
     FreezeEntityPosition(ped, true)
 
-    -- 3. Swap to freemode model based on character gender
+    -- 2. Swap to freemode model based on character gender
     local model = currentGender == 1 and "mp_f_freemode_01" or "mp_m_freemode_01"
     if type(model) == "string" then model = joaat(model) end
 
@@ -86,6 +80,21 @@ local function openAppearanceNUI()
     local ped = PlayerPedId()
     print('[nt_appearance] Model loaded, new ped handle: ' .. ped)
 
+    -- Restore position after model swap (SetPlayerModel can reset coords)
+    SetEntityCoords(ped, currentCoords.x, currentCoords.y, currentCoords.z, false, false, false, false)
+    SetEntityHeading(ped, currentHeading)
+    -- Snap to ground in case the stored position is slightly above terrain
+    Wait(100)
+    for _ = 1, 5 do
+        local found, gz = GetGroundZFor_3dCoord(currentCoords.x, currentCoords.y, currentCoords.z + 2.0, false)
+        if found then
+            SetEntityCoords(ped, currentCoords.x, currentCoords.y, gz + 0.05, false, false, false, false)
+            break
+        end
+        Wait(100)
+    end
+    FreezeEntityPosition(ped, true)
+
     -- Initialise head blend so hair colour natives work (must be called before SetPedHairColor)
     SetPedHeadBlendData(ped, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.0, false)
 
@@ -102,9 +111,136 @@ local function openAppearanceNUI()
         props         = {},
     }
 
-    SetEntityCoords(ped, loc.x, loc.y, found and groundZ or loc.z, false, false, false, false)
-    SetEntityHeading(ped, loc.w)
-    FreezeEntityPosition(ped, true)
+    -- ── Pre-populate editor with saved appearance ─────────────────────────────
+    -- If this character already has a saved skin, load it so the editor opens
+    -- showing their current look rather than a bare default ped.
+    local nuiInitAppearance = nil
+    if currentCitizenId then
+        local p = promise.new()
+        local editHandler = AddEventHandler('nt_appearance:receiveAppearanceForEdit', function(skinData)
+            p:resolve(skinData)
+        end)
+        TriggerServerEvent('nt_appearance:getAppearanceForEdit', currentCitizenId)
+        local skinJson = Citizen.Await(p)
+        RemoveEventHandler(editHandler)
+
+        if skinJson then
+            local skin = json.decode(skinJson)
+            if skin then
+                ped = PlayerPedId()
+
+                -- Head blend
+                if skin.headBlend then
+                    local h = skin.headBlend
+                    SetPedHeadBlendData(ped,
+                        h.shapeFirst or 0, h.shapeSecond or 0, h.shapeThird or 0,
+                        h.skinFirst or 0, h.skinSecond or 0, h.skinThird or 0,
+                        h.shapeMix or 0.5, h.skinMix or 0.5, h.thirdMix or 0.0, false)
+                    currentAppearance.headBlend = {
+                        shapeFirst = h.shapeFirst or 0, shapeSecond = h.shapeSecond or 0,
+                        skinFirst  = h.skinFirst  or 0, skinSecond  = h.skinSecond  or 0,
+                        shapeMix   = h.shapeMix   or 0.5, skinMix   = h.skinMix    or 0.5,
+                    }
+                end
+
+                -- Face features
+                local featureOrder = {
+                    'noseWidth','nosePeakHigh','nosePeakSize','noseBoneHigh','nosePeakLowering',
+                    'noseBoneTwist','eyeBrownHigh','eyeBrownForward','cheeksBoneHigh','cheeksBoneWidth',
+                    'cheeksWidth','eyesOpening','lipsThickness','jawBoneWidth','jawBoneBackSize',
+                    'chinBoneLenght','chinBoneLowering','chinBoneSize','chinHole','neckThickness',
+                }
+                local faceArr = {}
+                if skin.faceFeatures then
+                    for i, name in ipairs(featureOrder) do
+                        local v = skin.faceFeatures[name] or 0.0
+                        SetPedFaceFeature(ped, i - 1, v)
+                        currentAppearance.faceFeatures[i - 1] = v
+                        faceArr[i] = v  -- 1-indexed Lua table → 0-indexed JSON array
+                    end
+                end
+
+                -- Hair
+                if skin.hair then
+                    SetPedComponentVariation(ped, 2, skin.hair.style or 0, 0, 0)
+                    SetPedHairColor(ped, skin.hair.color or 0, skin.hair.highlight or 0)
+                    currentAppearance.hair          = skin.hair.style     or 0
+                    currentAppearance.hairColor     = skin.hair.color     or 0
+                    currentAppearance.hairHighlight = skin.hair.highlight or 0
+                end
+
+                -- Head overlays
+                local overlayNameMap = {
+                    blemishes=0,beard=1,eyebrows=2,ageing=3,makeUp=4,blush=5,
+                    complexion=6,sunDamage=7,lipstick=8,moleAndFreckles=9,chestHair=10,bodyBlemishes=11,
+                }
+                local overlaysNUI = {}
+                for name, idx in pairs(overlayNameMap) do
+                    local ov = skin.headOverlays and skin.headOverlays[name]
+                    local entry = {
+                        style       = ov and ov.style       or 255,
+                        opacity     = ov and ov.opacity     or 0.0,
+                        color       = ov and ov.color       or 0,
+                        secondColor = ov and ov.secondColor or 0,
+                    }
+                    if ov and ov.style ~= 255 then
+                        SetPedHeadOverlay(ped, idx, ov.style or 0, ov.opacity or 0.0)
+                        if (ov.color or 0) >= 0 then
+                            SetPedHeadOverlayColor(ped, idx, 1, ov.color or 0, ov.secondColor or 0)
+                        end
+                    end
+                    currentAppearance.headOverlays[idx] = entry
+                    overlaysNUI[tostring(idx)] = entry
+                end
+
+                -- Eye color
+                currentAppearance.eyeColor = skin.eyeColor or -1
+                if skin.eyeColor and skin.eyeColor >= 0 then
+                    SetPedEyeColor(ped, skin.eyeColor)
+                end
+
+                -- Components / clothing
+                local clothingNUI = {}
+                if skin.components then
+                    for _, comp in ipairs(skin.components) do
+                        local cid = comp.component_id
+                        SetPedComponentVariation(ped, cid, comp.drawable or 0, comp.texture or 0, 0)
+                        currentAppearance.clothing[cid] = { drawable = comp.drawable or 0, texture = comp.texture or 0 }
+                        clothingNUI[tostring(cid)]       = { drawable = comp.drawable or 0, texture = comp.texture or 0 }
+                    end
+                end
+
+                -- Props
+                local propsNUI = {}
+                if skin.props then
+                    for _, prop in ipairs(skin.props) do
+                        local pid = prop.prop_id
+                        if (prop.drawable or -1) == -1 then
+                            ClearPedProp(ped, pid)
+                        else
+                            SetPedPropIndex(ped, pid, prop.drawable, prop.texture or 0, true)
+                        end
+                        currentAppearance.props[pid] = { drawable = prop.drawable or -1, texture = prop.texture or 0 }
+                        propsNUI[tostring(pid)]       = { drawable = prop.drawable or -1, texture = prop.texture or 0 }
+                    end
+                end
+
+                -- Build the NUI init payload to pre-populate sliders
+                nuiInitAppearance = {
+                    headBlend     = currentAppearance.headBlend,
+                    faceFeatures  = faceArr,
+                    hair          = currentAppearance.hair,
+                    hairColor     = currentAppearance.hairColor,
+                    hairHighlight = currentAppearance.hairHighlight,
+                    clothing      = clothingNUI,
+                    props         = propsNUI,
+                    overlays      = overlaysNUI,
+                    eyeColor      = currentAppearance.eyeColor,
+                }
+            end
+        end
+    end
+
     SetEntityVisible(ped, true, false)
 
     -- Tear down any stale camera
@@ -141,8 +277,10 @@ local function openAppearanceNUI()
     appearanceOpen = true
     DisplayHud(false)
     DisplayRadar(false)
+    print('[nt_appearance] SetNuiFocus called')
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
+    print('[nt_appearance] SendNUIMessage open sent')
     SendNUIMessage({ action = 'open' })
     SendNUIMessage({
         type            = 'setConfig',
@@ -150,6 +288,14 @@ local function openAppearanceNUI()
         appearanceReady = true,
         gender          = currentGender,
     })
+    -- Send saved appearance to pre-populate sliders if we loaded one
+    if nuiInitAppearance then
+        nuiInitAppearance.type = 'initAppearance'
+        SendNUIMessage(nuiInitAppearance)
+    end
+
+    -- Camera and NUI are ready — fade the screen in to reveal the editor
+    DoScreenFadeIn(500)
 
     -- Play idle anim in its own thread so tick setup isn't delayed
     CreateThread(function() PlayIdleAnim(PlayerPedId()) end)
@@ -241,6 +387,9 @@ local function closeAppearanceNUI()
         appearanceCam = nil
     end
 
+    -- Release streaming focus set by SetFocusArea during editor open
+    ClearFocus()
+
     local ped = PlayerPedId()
     ClearPedTasks(ped)
     FreezeEntityPosition(ped, false)
@@ -251,6 +400,7 @@ end
 
 RegisterNetEvent('nt_appearance:open')
 AddEventHandler('nt_appearance:open', function(citizenid, gender)
+    print('[nt_appearance] Received open event for citizenid: ' .. tostring(citizenid) .. ', gender: ' .. tostring(gender))
     currentCitizenId = citizenid
     currentGender    = gender or 0
     CreateThread(function()
@@ -261,19 +411,27 @@ end)
 RegisterNetEvent('nt_appearance:appearanceSaved')
 AddEventHandler('nt_appearance:appearanceSaved', function()
     print('[nt_appearance] Appearance saved successfully')
+    -- Capture before closeAppearanceNUI() nils currentCitizenId
+    local savedCitizenId = currentCitizenId
     closeAppearanceNUI()
-    TriggerEvent('nt_appearance:complete', currentCitizenId)
+    print('[nt_appearance] Firing nt_appearance:complete for citizenid: ' .. tostring(savedCitizenId))
+    TriggerEvent('nt_appearance:complete', savedCitizenId)
 end)
 
 -- ── Commands ──────────────────────────────────────────────────────────────────
 
 RegisterCommand('ntappearance', function(_, args)
     currentCitizenId = args[1] or nil
+    local playerData = exports['qbx_core']:GetPlayerData()
     if not currentCitizenId then
-        local playerData = exports['qbx_core']:GetPlayerData()
         currentCitizenId = playerData and playerData.citizenid or nil
     end
-    currentGender = tonumber(args[2]) or 0
+    -- If gender is not explicitly passed, read it from the character's charinfo
+    if args[2] then
+        currentGender = tonumber(args[2]) or 0
+    else
+        currentGender = (playerData and playerData.charinfo and playerData.charinfo.gender) or 0
+    end
     CreateThread(function()
         openAppearanceNUI()
     end)
@@ -600,6 +758,9 @@ end)
 
 -- ── Apply appearance ───────────────────────────────────────────────────────────
 
+-- Allow server to push the saved skin for the appearance editor pre-population
+RegisterNetEvent('nt_appearance:receiveAppearanceForEdit')
+
 local function ApplyAppearance(model, skinJson)
     local ped = PlayerPedId()
 
@@ -698,7 +859,23 @@ end
 RegisterNetEvent('nt_appearance:applyAppearance')
 AddEventHandler('nt_appearance:applyAppearance', function(model, skinJson)
     CreateThread(function()
+        local ped = PlayerPedId()
+        -- Save position because ApplyAppearance calls SetPlayerModel which resets coords
+        local savedCoords  = GetEntityCoords(ped)
+        local savedHeading = GetEntityHeading(ped)
+
         ApplyAppearance(model, skinJson)
+
+        -- Restore position after model swap
+        ped = PlayerPedId()
+        SetEntityCoords(ped, savedCoords.x, savedCoords.y, savedCoords.z, false, false, false, false)
+        SetEntityHeading(ped, savedHeading)
+
+        -- Reveal ped now that skin is applied (editor manages its own visibility)
+        if not appearanceOpen then
+            SetEntityVisible(ped, true, false)
+            FreezeEntityPosition(ped, false)
+        end
     end)
 end)
 

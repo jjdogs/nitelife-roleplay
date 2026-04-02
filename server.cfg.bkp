@@ -51,7 +51,7 @@ setr weather_disablecd true
 exec ox.cfg
 
 # loadscreen config
-setr loadscreen:externalShutdown false
+setr loadscreen:externalShutdown true
 set loadscreen:primaryColor "#f1e542"
 set loadscreen:shadowColor "#1a18077f"
 

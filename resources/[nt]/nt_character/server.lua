@@ -1,6 +1,7 @@
 -- ── State ─────────────────────────────────────────────────────────────────────
 
 local activePlayers = {}  -- [source] = citizenid
+local sessionStart  = {}  -- [source] = os.time() when character session began
 
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -188,7 +189,7 @@ AddEventHandler('nt_character:setActiveCharacter', function(citizenid)
 end)
 
 AddEventHandler('playerDropped', function()
-    local src = source
+    local src       = source
     local citizenid = activePlayers[src]
     if not citizenid then return end
 
@@ -196,13 +197,17 @@ AddEventHandler('playerDropped', function()
     local coords  = GetEntityCoords(ped)
     local heading = GetEntityHeading(ped)
 
+    local elapsed = os.time() - (sessionStart[src] or os.time())
+    local elapsedMinutes = math.floor(elapsed / 60)
+
     MySQL.update.await(
-        'UPDATE players SET position = ? WHERE citizenid = ?',
-        { json.encode({ x = coords.x, y = coords.y, z = coords.z, w = heading }), citizenid }
+        'UPDATE players SET position = ?, last_logged_out = NOW(), playtime = playtime + ? WHERE citizenid = ?',
+        { json.encode({ x = coords.x, y = coords.y, z = coords.z, w = heading }), elapsedMinutes, citizenid }
     )
 
-    print('[nt_character] Saved last location for ' .. citizenid)
+    print('[nt_character] Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
     activePlayers[src] = nil
+    sessionStart[src]  = nil
 end)
 
 -- ── Spawn selection ────────────────────────────────────────────────────────
@@ -262,6 +267,7 @@ RegisterNetEvent('nt_character:spawnPlayer')
 AddEventHandler('nt_character:spawnPlayer', function(citizenid, coords)
     local src     = source
     local license = GetPlayerLicense(src)
+    print('[nt_character] spawnPlayer called — citizenid: ' .. tostring(citizenid) .. ', coords: ' .. json.encode(coords))
 
     local char = MySQL.single.await(
         'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
@@ -273,19 +279,44 @@ AddEventHandler('nt_character:spawnPlayer', function(citizenid, coords)
         return
     end
 
-    -- Track active character
+    -- Track active character and record session start time for playtime accounting
     activePlayers[src] = citizenid
+    sessionStart[src]  = os.time()
 
-    -- Load character via qbx_core (requires useExternalCharacters = true — placeholder for now)
-    local success = pcall(function()
-        exports.qbx_core:CreatePlayer(src, citizenid, false)
-    end)
+    -- Load character via qbx_core using Login(source, citizenid)
+    -- Login loads player data from DB, validates license ownership, and registers the player
+    -- in qbx_core's player table. CreatePlayer is the internal constructor and takes a data
+    -- table — calling it with (src, citizenid) was wrong and always failed silently.
+    local success = exports.qbx_core:Login(src, citizenid)
 
     if success then
-        print('[nt_character] Loaded character ' .. citizenid .. ' for ' .. tostring(license))
+        print('[nt_character] qbx_core Login succeeded for ' .. citizenid)
         TriggerClientEvent('nt_character:playerReady', src)
     else
-        print('[nt_character] qbx_core:CreatePlayer not available yet (useExternalCharacters is off) — sending playerReady anyway')
-        TriggerClientEvent('nt_character:playerReady', src)
+        print('[nt_character] qbx_core Login failed for ' .. citizenid .. ' — cannot spawn')
     end
 end)
+
+-- ── Logout command ─────────────────────────────────────────────────────────
+
+RegisterCommand('logout', function(src)
+    local citizenid = activePlayers[src]
+    print('[nt_character] logout — src: ' .. src .. ', citizenid: ' .. tostring(citizenid))
+
+    if citizenid then
+        local elapsed        = os.time() - (sessionStart[src] or os.time())
+        local elapsedMinutes = math.floor(elapsed / 60)
+
+        MySQL.update.await(
+            'UPDATE players SET last_logged_out = NOW(), playtime = playtime + ? WHERE citizenid = ?',
+            { elapsedMinutes, citizenid }
+        )
+
+        print('[nt_character] Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
+    end
+
+    activePlayers[src] = nil
+    sessionStart[src]  = nil
+    exports.qbx_core:Logout(src)
+    TriggerClientEvent('nt_character:openNUI', src)
+end, false)

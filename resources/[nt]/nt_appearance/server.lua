@@ -121,6 +121,35 @@ AddEventHandler('nt_appearance:deleteOutfit', function(outfitId, citizenid)
     TriggerClientEvent('nt_appearance:receiveOutfits', src, getOutfitList(citizenid))
 end)
 
+-- ── Appearance for editor ─────────────────────────────────────────────────────
+-- Returns the saved skin JSON so the editor can pre-populate its sliders.
+
+RegisterNetEvent('nt_appearance:getAppearanceForEdit')
+AddEventHandler('nt_appearance:getAppearanceForEdit', function(citizenid)
+    local src     = source
+    local license = GetPlayerLicense(src)
+    if not license then
+        TriggerClientEvent('nt_appearance:receiveAppearanceForEdit', src, nil)
+        return
+    end
+
+    local char = MySQL.single.await(
+        'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
+        { citizenid, license }
+    )
+    if not char then
+        TriggerClientEvent('nt_appearance:receiveAppearanceForEdit', src, nil)
+        return
+    end
+
+    local skin = MySQL.single.await(
+        'SELECT skin FROM playerskins WHERE citizenid = ? AND active = 1',
+        { citizenid }
+    )
+
+    TriggerClientEvent('nt_appearance:receiveAppearanceForEdit', src, skin and skin.skin or nil)
+end)
+
 -- ── Load appearance ────────────────────────────────────────────────────────────
 
 RegisterNetEvent('nt_appearance:loadAppearance')

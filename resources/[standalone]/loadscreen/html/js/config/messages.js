@@ -1,4 +1,4 @@
-import { finishingMessage, serverMessage } from '../util/elements.js';
+import { finishingMessage, loadscreenWrapper, serverMessage } from '../util/elements.js';
 
 const colorRegex = /\^[\d]/g;
 
@@ -32,4 +32,6 @@ export function configMessages({ vars, config }) {
     );
 
     finishingMessage.innerText = removeColors(config.finishingMessage);
+
+    loadscreenWrapper.dataset.players = `${vars.playerCount ?? '—'} / ${vars.maxPlayers ?? '—'} players`;
 }

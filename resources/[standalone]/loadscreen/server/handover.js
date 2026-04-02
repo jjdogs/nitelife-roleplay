@@ -74,6 +74,8 @@ function onPlayerConnecting(name, _setKickReason, deferrals) {
                 'sv_projectName',
                 GetConvar('sv_hostname', ''),
             ),
+            playerCount: String(GetNumPlayerIndices()),
+            maxPlayers: String(GetConvarInt('sv_maxClients', 32)),
         },
 
         paths,

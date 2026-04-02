@@ -13,6 +13,7 @@ type Character = {
   job: string
   properties: number
   playtime: number
+  lastPlayed: string | null
   created: string
 }
 
@@ -29,7 +30,20 @@ const emptyForm = { gender: 0, firstName: '', middleName: '', lastName: '', suff
 function charName(c: Character)     { return `${c.firstName} ${c.lastName}` }
 function charFullName(c: Character) { return [c.firstName, c.middleName, c.lastName, c.suffix].filter(Boolean).join(' ') }
 function charInitials(c: Character) { return `${c.firstName.charAt(0)}${c.lastName.charAt(0)}` }
-function charPlaytime(c: Character) { return `${c.playtime}h` }
+
+function formatPlaytime(minutes: number): string {
+  if (!minutes) return '0h played'
+  return `${Math.floor(minutes / 60)}h played`
+}
+
+function formatLastSeen(ts: string | null): string {
+  if (!ts) return 'Never'
+  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
+  if (diff < 60) return 'Just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
+}
 
 function nuiFetch<T = unknown>(endpoint: string, data: object): Promise<T | null> {
   return fetch(`https://nt_character/${endpoint}`, {
@@ -122,7 +136,7 @@ function CharacterCard({ char, selected, onSelect, onPlay, onBack }: {
         <div className="flex flex-col items-center gap-1 text-center">
           <span className="text-sm font-medium text-white/90">{charName(char)}</span>
           <span className="text-xs text-white/45">{char.job}</span>
-          <span className="text-xs text-white/30">{charPlaytime(char)} played</span>
+          <span className="text-xs text-white/30">{formatPlaytime(char.playtime)}</span>
         </div>
       </div>
 
@@ -134,9 +148,10 @@ function CharacterCard({ char, selected, onSelect, onPlay, onBack }: {
               { label: 'Full name',     value: charFullName(char) },
               { label: 'Date of birth', value: char.dob },
               { label: 'Created',       value: char.created },
+              { label: 'Last seen',     value: formatLastSeen(char.lastPlayed) },
               { label: 'Job',           value: char.job },
               { label: 'Properties',    value: String(char.properties) },
-              { label: 'Playtime',      value: charPlaytime(char) },
+              { label: 'Playtime',      value: formatPlaytime(char.playtime) },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="text-xs text-white/38">{label}</span>
@@ -188,7 +203,7 @@ function DeleteCard({ char, selected, onSelect, onDeleted, onBack }: {
         <div className="flex flex-col items-center gap-1 text-center">
           <span className="text-sm font-medium text-white/90">{charName(char)}</span>
           <span className="text-xs text-white/45">{char.job}</span>
-          <span className="text-xs text-white/30">{charPlaytime(char)} played</span>
+          <span className="text-xs text-white/30">{formatPlaytime(char.playtime)}</span>
         </div>
       </div>
 
@@ -199,8 +214,9 @@ function DeleteCard({ char, selected, onSelect, onDeleted, onBack }: {
             {[
               { label: 'Full name',     value: charFullName(char) },
               { label: 'Date of birth', value: char.dob },
+              { label: 'Last seen',     value: formatLastSeen(char.lastPlayed) },
               { label: 'Job',           value: char.job },
-              { label: 'Playtime',      value: charPlaytime(char) },
+              { label: 'Playtime',      value: formatPlaytime(char.playtime) },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between">
                 <span className="text-xs text-white/38">{label}</span>
@@ -382,6 +398,13 @@ function SpawnScreen({ character, locations, onBack }: {
     nuiFetch('previewSpawn', { coords: loc.coords })
   }
 
+  // Auto-preview the first location (last location) as soon as locations arrive
+  useEffect(() => {
+    if (locations.length > 0 && selectedLoc === null) {
+      handleSelect(locations[0])
+    }
+  }, [locations])
+
   function handleSpawn() {
     if (!selectedLoc) return
     nuiFetch('confirmSpawn', { citizenid: character.citizenid, coords: selectedLoc.coords })
@@ -464,11 +487,16 @@ function MainMenu({ characters, maxSlots, onPlay, onCreate, onDelete }: {
   characters: Character[]; maxSlots: number; onPlay: () => void; onCreate: () => void; onDelete: () => void
 }) {
   const totalPlaytime = characters.reduce((s, c) => s + c.playtime, 0)
+  const mostRecentSession = characters
+    .map(c => c.lastPlayed)
+    .filter(Boolean)
+    .sort()
+    .slice(-1)[0] ?? null
   const stats = [
-    { label: 'Playtime',     value: `${totalPlaytime}h` },
+    { label: 'Playtime',     value: formatPlaytime(totalPlaytime) },
     { label: 'Characters',   value: `${characters.length} / ${maxSlots}` },
     { label: 'Member since', value: 'Jan 2025' },
-    { label: 'Last seen',    value: '2 days ago' },
+    { label: 'Last seen',    value: formatLastSeen(mostRecentSession) },
   ]
   return (
     <div className="fixed inset-0 flex bg-[#0b1120] text-white select-none">
@@ -622,6 +650,7 @@ function DeleteCharacterScreen({ characters, maxSlots, onBack }: {
 
 function App() {
   const [visible, setVisible]             = useState(false)
+  const [everOpened, setEverOpened]       = useState(false)
   const [screen, setScreen]               = useState<'menu' | 'play' | 'create' | 'delete' | 'spawn'>('menu')
   const [characters, setCharacters]       = useState<Character[]>([])
   const [maxSlots, setMaxSlots]           = useState(4)
@@ -629,14 +658,22 @@ function App() {
   const [spawnLocations, setSpawnLocations] = useState<SpawnLocation[]>([])
 
   useEffect(() => {
+    // Signal to Lua that the NUI page is loaded and the message listener is ready.
+    // Lua will send the 'open' message in response (nuiReady callback).
+    nuiFetch('nuiReady', {})
+
     const handler = (event: MessageEvent) => {
       const data = event.data
       if (data.action === 'open') {
         setScreen(data.screen ?? 'menu')
         setVisible(true)
+        setEverOpened(true)
       } else if (data.action === 'setCharacters') {
         setCharacters(data.characters ?? [])
         setMaxSlots(data.maxSlots ?? 4)
+      } else if (data.action === 'setSpawnCharacter') {
+        setSpawnCharacter(data.character ?? null)
+        setSpawnLocations([])
       } else if (data.action === 'setSpawnLocations') {
         setSpawnLocations(data.locations ?? [])
       } else if (data.action === 'close') {
@@ -649,7 +686,10 @@ function App() {
     return () => window.removeEventListener('message', handler)
   }, [])
 
-  if (!visible) return null
+  // Before the NUI has ever opened: render an opaque overlay so there is no
+  // gap between loading screen shutdown and the character select UI appearing.
+  // After close (player has spawned): return null so the game world is visible.
+  if (!visible) return everOpened ? null : <div className="fixed inset-0 bg-[#0b1120]" />
 
   function handlePlay(char: Character) {
     setSpawnCharacter(char)

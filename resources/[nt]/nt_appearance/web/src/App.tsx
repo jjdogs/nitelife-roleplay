@@ -354,6 +354,50 @@ function App() {
       if (data.type === 'setOutfits') {
         setOutfits(data.outfits ?? [])
       }
+      if (data.type === 'initAppearance') {
+        // Pre-populate all sliders with the character's saved appearance
+        if (data.headBlend || data.faceFeatures !== undefined) {
+          setAppearance({
+            headBlend: {
+              shapeFirst:  data.headBlend?.shapeFirst  ?? 0,
+              shapeSecond: data.headBlend?.shapeSecond ?? 0,
+              skinFirst:   data.headBlend?.skinFirst   ?? 0,
+              skinSecond:  data.headBlend?.skinSecond  ?? 0,
+              shapeMix:    data.headBlend?.shapeMix    ?? 0.5,
+              skinMix:     data.headBlend?.skinMix     ?? 0.5,
+            },
+            faceFeatures:  data.faceFeatures  ?? new Array(20).fill(0.0),
+            hair:          data.hair          ?? 0,
+            hairColor:     data.hairColor     ?? 0,
+            hairHighlight: data.hairHighlight ?? 0,
+          })
+        }
+        if (data.clothing) {
+          setClothing(prev => {
+            const next = { ...prev }
+            for (const [k, v] of Object.entries(data.clothing as Record<string, DrawableTex>))
+              next[Number(k)] = v
+            return next
+          })
+        }
+        if (data.props) {
+          setPedProps(prev => {
+            const next = { ...prev }
+            for (const [k, v] of Object.entries(data.props as Record<string, DrawableTex>))
+              next[Number(k)] = v
+            return next
+          })
+        }
+        if (data.overlays) {
+          setOverlays(prev => {
+            const next = { ...prev }
+            for (const [k, v] of Object.entries(data.overlays as Record<string, OverlayState>))
+              next[Number(k)] = v
+            return next
+          })
+        }
+        if (data.eyeColor !== undefined) setEyeColor(data.eyeColor)
+      }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
