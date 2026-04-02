@@ -17,11 +17,11 @@
 ## Phase 2 — Foundation & Admin `In Progress`
 
 **Tasks**
-- [ ] nt_character phase 10 (bug fixes)
-- [ ] pug-adminmenu setup
-- [ ] ox_inventory config
-- [ ] Basic ACE permissions
-- [ ] server.cfg cleanup
+- [x ] nt_character phase 10 (bug fixes)
+- [ x] pug-adminmenu setup
+- [x ] ox_inventory config
+- [ x] Basic ACE permissions
+- [ x] server.cfg cleanup
 
 > Get admin tooling and inventory sorted before adding any job content
 
