@@ -17,12 +17,6 @@ type Character = {
   created: string
 }
 
-type SpawnLocation = {
-  id: string
-  label: string
-  coords: { x: number; y: number; z: number; w: number }
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const emptyForm = { gender: 0, firstName: '', middleName: '', lastName: '', suffix: '', dob: '', nationality: '' }
@@ -32,8 +26,12 @@ function charFullName(c: Character) { return [c.firstName, c.middleName, c.lastN
 function charInitials(c: Character) { return `${c.firstName.charAt(0)}${c.lastName.charAt(0)}` }
 
 function formatPlaytime(minutes: number): string {
-  if (!minutes) return '0h played'
-  return `${Math.floor(minutes / 60)}h played`
+  if (!minutes || minutes === 0) return '0 min'
+  const hrs = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  if (hrs === 0) return `${mins} min`
+  if (mins === 0) return `${hrs} hr`
+  return `${hrs} hr ${mins} min`
 }
 
 function formatLastSeen(ts: string | null): string {
@@ -366,121 +364,6 @@ function CreateSlotCard({ selected, form, errors, serverError, onSelect, onChang
   )
 }
 
-// ── Spawn screen ──────────────────────────────────────────────────────────────
-
-function SpawnLocationCard({ loc, selected, onSelect }: {
-  loc: SpawnLocation; selected: boolean; onSelect: () => void
-}) {
-  return (
-    <button
-      onClick={onSelect}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-150 cursor-pointer
-        ${selected
-          ? 'border-white/40 bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.03)]'
-          : 'border-white/10 bg-white/[0.03] hover:border-white/22 hover:bg-white/[0.06]'}`}
-    >
-      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors duration-150 ${selected ? 'bg-white' : 'bg-white/25'}`} />
-      <span className="text-sm text-white/80">{loc.label}</span>
-    </button>
-  )
-}
-
-function SpawnScreen({ character, locations, onBack }: {
-  character: Character
-  locations: SpawnLocation[]
-  onBack: () => void
-}) {
-  const [selectedLoc, setSelectedLoc] = useState<SpawnLocation | null>(null)
-
-  function handleSelect(loc: SpawnLocation) {
-    console.log('[nt_character] previewSpawn fetch →', loc.id, loc.coords)
-    setSelectedLoc(loc)
-    nuiFetch('previewSpawn', { coords: loc.coords })
-  }
-
-  // Auto-preview the first location (last location) as soon as locations arrive
-  useEffect(() => {
-    if (locations.length > 0 && selectedLoc === null) {
-      handleSelect(locations[0])
-    }
-  }, [locations])
-
-  function handleSpawn() {
-    if (!selectedLoc) return
-    nuiFetch('confirmSpawn', { citizenid: character.citizenid, coords: selectedLoc.coords })
-  }
-
-  function handleBack() {
-    nuiFetch('cancelSpawn', {})
-    onBack()
-  }
-
-  return (
-    // Transparent overlay — game world renders behind this
-    <div className="fixed inset-0 select-none text-white pointer-events-none">
-
-      {/* Left sidebar: semi-transparent, full height */}
-      <div
-        className="absolute inset-y-0 left-0 w-[300px] flex flex-col pointer-events-auto"
-        style={{ background: 'rgba(11, 17, 32, 0.85)' }}
-      >
-        {/* Header */}
-        <div className="px-7 pt-8 pb-6 border-b border-white/8">
-          <Logo />
-          <div className="mt-5">
-            <p className="text-[10px] text-white/30 tracking-wide uppercase">Spawning as</p>
-            <p className="text-sm font-medium text-white/85 mt-0.5">{charFullName(character)}</p>
-          </div>
-        </div>
-
-        {/* Location cards */}
-        <div className="flex-1 px-7 py-6 flex flex-col gap-2 overflow-y-auto">
-          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-white/28 mb-1">
-            Choose Spawn Location
-          </p>
-          {locations.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <span className="text-xs text-white/20">Loading locations...</span>
-            </div>
-          ) : (
-            locations.map(loc => (
-              <SpawnLocationCard
-                key={loc.id}
-                loc={loc}
-                selected={selectedLoc?.id === loc.id}
-                onSelect={() => handleSelect(loc)}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Back link */}
-        <div className="px-7 py-5 border-t border-white/8">
-          <BackLink label="← Back to characters" onClick={handleBack} />
-        </div>
-      </div>
-
-      {/* Bottom-right: Spawn Here button — gradient fade, game world visible above */}
-      <div
-        className="absolute bottom-0 left-[300px] right-0 px-10 py-7 flex justify-end pointer-events-auto"
-        style={{ background: 'linear-gradient(to top, rgba(11,17,32,0.75) 0%, transparent 100%)' }}
-      >
-        <button
-          disabled={!selectedLoc}
-          onClick={handleSpawn}
-          className={`py-2.5 px-8 rounded text-xs font-semibold tracking-wide transition-all duration-150
-            ${selectedLoc
-              ? 'bg-white text-[#0b1120] hover:bg-white/90 active:scale-95 cursor-pointer'
-              : 'bg-white/8 text-white/20 cursor-not-allowed'}`}
-        >
-          Spawn Here
-        </button>
-      </div>
-
-    </div>
-  )
-}
-
 // ── Screens ───────────────────────────────────────────────────────────────────
 
 function MainMenu({ characters, maxSlots, onPlay, onCreate, onDelete }: {
@@ -649,13 +532,11 @@ function DeleteCharacterScreen({ characters, maxSlots, onBack }: {
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [visible, setVisible]             = useState(false)
-  const [everOpened, setEverOpened]       = useState(false)
-  const [screen, setScreen]               = useState<'menu' | 'play' | 'create' | 'delete' | 'spawn'>('menu')
-  const [characters, setCharacters]       = useState<Character[]>([])
-  const [maxSlots, setMaxSlots]           = useState(4)
-  const [spawnCharacter, setSpawnCharacter] = useState<Character | null>(null)
-  const [spawnLocations, setSpawnLocations] = useState<SpawnLocation[]>([])
+  const [visible, setVisible]       = useState(false)
+  const [everOpened, setEverOpened] = useState(false)
+  const [screen, setScreen]         = useState<'menu' | 'play' | 'create' | 'delete'>('menu')
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [maxSlots, setMaxSlots]     = useState(4)
 
   useEffect(() => {
     // Signal to Lua that the NUI page is loaded and the message listener is ready.
@@ -671,15 +552,8 @@ function App() {
       } else if (data.action === 'setCharacters') {
         setCharacters(data.characters ?? [])
         setMaxSlots(data.maxSlots ?? 4)
-      } else if (data.action === 'setSpawnCharacter') {
-        setSpawnCharacter(data.character ?? null)
-        setSpawnLocations([])
-      } else if (data.action === 'setSpawnLocations') {
-        setSpawnLocations(data.locations ?? [])
       } else if (data.action === 'close') {
         setVisible(false)
-        setSpawnCharacter(null)
-        setSpawnLocations([])
       }
     }
     window.addEventListener('message', handler)
@@ -692,9 +566,7 @@ function App() {
   if (!visible) return everOpened ? null : <div className="fixed inset-0 bg-[#0b1120]" />
 
   function handlePlay(char: Character) {
-    setSpawnCharacter(char)
-    setSpawnLocations([])
-    setScreen('spawn')
+    // Lua's playCharacter callback will close this NUI and fire nt_spawn:beginSpawnSelection
     nuiFetch('playCharacter', { citizenid: char.citizenid })
   }
 
@@ -706,23 +578,14 @@ function App() {
       {screen === 'play'   && <PlayScreen {...screenProps} onPlay={handlePlay} />}
       {screen === 'create' && <CreateCharacterScreen {...screenProps} />}
       {screen === 'delete' && <DeleteCharacterScreen {...screenProps} />}
-      {screen === 'spawn'  && spawnCharacter && (
-        <SpawnScreen
-          character={spawnCharacter}
-          locations={spawnLocations}
-          onBack={() => setScreen('play')}
-        />
-      )}
 
-      {screen !== 'spawn' && (
-        <button
-          onClick={() => nuiFetch('closeUI', {})}
-          className="fixed top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/35 hover:bg-white/10 hover:text-white/65 transition-all duration-150 cursor-pointer z-50 text-lg leading-none"
-          title="Close"
-        >
-          ×
-        </button>
-      )}
+      <button
+        onClick={() => nuiFetch('closeUI', {})}
+        className="fixed top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/35 hover:bg-white/10 hover:text-white/65 transition-all duration-150 cursor-pointer z-50 text-lg leading-none"
+        title="Close"
+      >
+        ×
+      </button>
     </div>
   )
 }

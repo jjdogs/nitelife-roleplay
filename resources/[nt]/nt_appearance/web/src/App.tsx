@@ -37,6 +37,29 @@ const CATEGORIES = [
   { id: 'tattoos',     icon: '∧', label: 'Tattoos' },
 ]
 
+// Maps section keys sent from Lua to one or more category IDs in the UI.
+// - 'clothing' includes props (hats, glasses, watches, etc.)
+// - 'face' includes inheritance (head blend / parent faces) + face features
+// - 'makeup' maps to the overlays category (beard, eyebrows, lipstick, …)
+const SECTION_CATEGORY_MAP: Record<string, string[]> = {
+  clothing: ['clothing', 'props'],
+  hair:     ['hair'],
+  face:     ['inheritance', 'face'],
+  makeup:   ['overlays'],
+  tattoos:  ['tattoos'],
+  outfits:  ['outfits'],
+}
+
+function sectionCategoryIds(sections: string[]): string[] {
+  const ids: string[] = []
+  for (const s of sections) {
+    for (const id of (SECTION_CATEGORY_MAP[s] ?? [s])) {
+      if (!ids.includes(id)) ids.push(id)
+    }
+  }
+  return ids
+}
+
 const CLOTHING_SLOTS = [
   { id: 11, label: 'Tops' },
   { id: 4,  label: 'Pants' },
@@ -244,6 +267,7 @@ function App() {
   const [appearanceReady, setAppearanceReady] = useState(false)
   const [saving, setSaving]                   = useState(false)
   const [currentGender, setCurrentGender]     = useState(0)  // 0=male 1=female
+  const [allowedSections, setAllowedSections] = useState<string[] | null>(null)
 
   // Hair sub-tab
   const [hairTab, setHairTab] = useState<'model' | 'color' | 'highlight'>('model')
@@ -345,11 +369,13 @@ function App() {
         setOutfits([])
         setDeleteConfirm(null)
         setOutfitName('')
+        setAllowedSections(null)
       }
       if (data.type === 'setConfig') {
         setPanelPosition(data.panelPosition ?? 'right')
         if (data.appearanceReady) setAppearanceReady(true)
         if (data.gender !== undefined) setCurrentGender(data.gender)
+        setAllowedSections(data.sections ?? null)
       }
       if (data.type === 'setOutfits') {
         setOutfits(data.outfits ?? [])
@@ -402,6 +428,15 @@ function App() {
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   }, [])
+
+  // When sections are restricted, auto-select the first visible category so the
+  // user lands directly in the right tab (e.g. clothing shop opens on Clothing).
+  useEffect(() => {
+    if (!allowedSections) return
+    const visibleIds = sectionCategoryIds(allowedSections)
+    if (activeCategory && visibleIds.includes(activeCategory)) return
+    setActiveCategory(visibleIds[0] ?? null)
+  }, [allowedSections])
 
   // ── Appearance updaters ──────────────────────────────────────────────────
 
@@ -902,10 +937,13 @@ function App() {
           </p>
         </div>
 
-        {/* Category icons — 4 columns to fit 8 categories in 2 rows */}
+        {/* Category icons — filtered by allowedSections when opened from a wardrobe/shop */}
         <div className="px-4 py-4 border-b border-white/8 flex-shrink-0">
           <div className="grid grid-cols-4 gap-1">
-            {CATEGORIES.map(cat => (
+            {(allowedSections
+              ? CATEGORIES.filter(c => sectionCategoryIds(allowedSections).includes(c.id))
+              : CATEGORIES
+            ).map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id === activeCategory ? null : cat.id)}
@@ -945,7 +983,7 @@ function App() {
             }`}
             style={{ color: appearanceReady && !saving ? '#ffffff' : 'rgba(255,255,255,0.30)' }}
           >
-            {saving ? 'Saving...' : 'Save & Continue'}
+            {saving ? 'Saving...' : allowedSections ? 'Save' : 'Save & Continue'}
           </button>
           <button
             onClick={() => nuiFetch('exitAppearance', {})}

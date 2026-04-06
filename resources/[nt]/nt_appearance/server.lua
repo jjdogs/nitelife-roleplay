@@ -1,3 +1,20 @@
+-- ── Schema bootstrap ──────────────────────────────────────────────────────────
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS player_outfits (
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            citizenid   VARCHAR(50)  NOT NULL,
+            outfitname  VARCHAR(100) NOT NULL,
+            model       VARCHAR(50)  NOT NULL DEFAULT 'mp_m_freemode_01',
+            components  LONGTEXT     NOT NULL,
+            props       LONGTEXT     NOT NULL,
+            created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+        )
+    ]])
+end)
+
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 
 local function GetPlayerLicense(source)

@@ -1,42 +1,21 @@
 {
-    "creator": "Envi Starter Shell",
     "resourceName": "envi_starter_shell_pack",
+    "creator": "Envi Starter Shell",
     "interiors": {
-        "envi_shell_03_empty": {
-            "label": "envi_shell_03_empty",
-            "stash": {
-                "maxweight": 500000,
-                "slots": 120
-            },
-            "doorOffset": {
-                "x": 5.040665,
-                "z": 1.182632,
-                "y": -6.923462,
-                "h": 265.386353,
-                "width": 2.0
-            },
-            "imgs": [
-                {
-                    "url": "https://r2.fivemanage.com/images/bxPoWekvnct6.png"
-                }
-            ],
-            "model": "envi_shell_03_empty"
-        },
         "envi_shell_01_empty": {
             "label": "envi_shell_01_empty",
-            "stash": {
-                "maxweight": 500000,
-                "slots": 120
-            },
             "doorOffset": {
                 "x": 0.558014,
-                "z": -0.137978,
                 "y": 0.334473,
+                "z": -0.137978,
                 "h": 182.922058,
                 "width": 2.0
             },
-            "imgs": [
-                {
+            "stash": {
+                "maxweight": 500000,
+                "slots": 120
+            },
+            "imgs": [{
                     "url": "https://r2.fivemanage.com/images/ZngkezOOkpjh.png"
                 },
                 {
@@ -47,19 +26,18 @@
         },
         "envi_shell_01_furnished": {
             "label": "envi_shell_01_furnished",
+            "doorOffset": {
+                "x": 0.645004,
+                "y": 0.37439,
+                "z": -0.138672,
+                "h": 178.0345,
+                "width": 2.0
+            },
             "stash": {
                 "maxweight": 500000,
                 "slots": 120
             },
-            "doorOffset": {
-                "x": 0.645004,
-                "z": -0.138672,
-                "y": 0.37439,
-                "h": 178.0345,
-                "width": 2.0
-            },
-            "imgs": [
-                {
+            "imgs": [{
                     "url": "https://i.fmfile.com/acP9u7gLziIbHCwCT6NVX/FiveM_b3095_GTAProcess_CxtnIljUTO.webp"
                 },
                 {
@@ -77,202 +55,77 @@
             ],
             "model": "envi_shell_01_furnished"
         },
-        "envi_shell_02_furnished": {
-            "label": "envi_shell_02_furnished",
+        "envi_shell_02_empty": {
+            "label": "envi_shell_02_empty",
+            "doorOffset": {
+                "x": 0.033615,
+                "y": -10.830933,
+                "z": 1.028763,
+                "h": 180.285309,
+                "width": 2.0
+            },
             "stash": {
                 "maxweight": 500000,
                 "slots": 120
             },
+            "imgs": [{
+                "url": "https://r2.fivemanage.com/images/gKI16BwCSxh4.png"
+            }],
+            "model": "envi_shell_02_empty"
+        },
+        "envi_shell_02_furnished": {
+            "label": "envi_shell_02_furnished",
             "doorOffset": {
                 "x": 0.062836,
-                "z": 1.035652,
                 "y": -11.282349,
+                "z": 1.035652,
                 "h": 189.682327,
                 "width": 2.0
             },
-            "imgs": [
-                {
-                    "url": "https://r2.fivemanage.com/images/KypFkSVYrTle.png"
-                }
-            ],
-            "model": "envi_shell_02_furnished"
-        },
-        "envi_shell_03_furnished": {
-            "label": "envi_shell_03_furnished",
             "stash": {
                 "maxweight": 500000,
                 "slots": 120
             },
+            "imgs": [{
+                "url": "https://r2.fivemanage.com/images/KypFkSVYrTle.png"
+            }],
+            "model": "envi_shell_02_furnished"
+        },
+        "envi_shell_03_empty": {
+            "label": "envi_shell_03_empty",
+            "doorOffset": {
+                "x": 5.040665,
+                "y": -6.923462,
+                "z": 1.182632,
+                "h": 265.386353,
+                "width": 2.0
+            },
+            "stash": {
+                "maxweight": 500000,
+                "slots": 120
+            },
+            "imgs": [{
+                "url": "https://r2.fivemanage.com/images/bxPoWekvnct6.png"
+            }],
+            "model": "envi_shell_03_empty"
+        },
+        "envi_shell_03_furnished": {
+            "label": "envi_shell_03_furnished",
             "doorOffset": {
                 "x": 5.074585,
-                "z": 1.184517,
                 "y": 1.100098,
+                "z": 1.184517,
                 "h": 266.767059,
                 "width": 2.0
             },
-            "imgs": [
-                {
-                    "url": "https://r2.fivemanage.com/images/jFyCZixN3CcZ.png"
-                }
-            ],
-            "model": "envi_shell_03_furnished"
-        },
-        "envi_shell_02_empty": {
-            "points": [],
-            "useShowerLocations": [
-                {
-                    "z": 0.65116119384765,
-                    "y": -6.28607177734375,
-                    "x": 1.24861145019531
-                },
-                {
-                    "z": 0.65116119384765,
-                    "y": -6.28607177734375,
-                    "x": 1.24861145019531
-                }
-            ],
-            "useSinkLocations": [
-                {
-                    "z": 1.01483154296875,
-                    "y": -3.45245361328125,
-                    "x": 3.18644714355468
-                },
-                {
-                    "z": 1.01483154296875,
-                    "y": -3.45245361328125,
-                    "x": 3.18644714355468
-                },
-                {
-                    "z": 0.77301025390625,
-                    "y": -10.63751220703125,
-                    "x": 1.61952209472656
-                },
-                {
-                    "z": 0.77301025390625,
-                    "y": -10.63751220703125,
-                    "x": 1.61952209472656
-                }
-            ],
-            "imgs": [
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/YV05dAl2xNgQ.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/R1J9rjIgOh9y.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/pLXVpyVsC3o0.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/tHnx04dYdPHF.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/Td2kZsG5rbZ1.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/4rfswcLENEu3.webp"
-                },
-                {
-                    "url": "https://r2.fivemanage.com/kzopqATAKEVFQF9AWwZs7/UrpgAoLYmRiI.webp"
-                }
-            ],
-            "label": "envi_shell_02_empty",
             "stash": {
-                "maxweight": 25000,
-                "slots": 25
+                "maxweight": 500000,
+                "slots": 120
             },
-            "doorOffset": {
-                "width": 2.0,
-                "z": 1.02879333496093,
-                "y": -11.1646728515625,
-                "x": 0.01579284667968,
-                "h": 183.99337768554688
-            },
-            "lightSwitchLocations": [
-                {
-                    "z": 1.47086334228515,
-                    "y": -5.78521728515625,
-                    "x": -4.67811584472656
-                },
-                {
-                    "z": 1.47086334228515,
-                    "y": -5.78521728515625,
-                    "x": -4.67811584472656
-                },
-                {
-                    "z": 1.46011352539062,
-                    "y": -9.85113525390625,
-                    "x": 0.95356750488281
-                },
-                {
-                    "z": 1.46011352539062,
-                    "y": -9.85113525390625,
-                    "x": 0.95356750488281
-                }
-            ],
-            "model": "envi_shell_02_empty",
-            "trashLocations": [
-                {
-                    "z": 0.02879333496093,
-                    "y": -2.6138916015625,
-                    "x": 1.72377014160156
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -4.876220703125,
-                    "x": -6.37332153320312
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -2.0592041015625,
-                    "x": -6.40847778320312
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -10.54107666015625,
-                    "x": -6.81306457519531
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -7.57293701171875,
-                    "x": -4.62103271484375
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -6.86724853515625,
-                    "x": -3.64923095703125
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -2.00787353515625,
-                    "x": -1.08157348632812
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -3.86553955078125,
-                    "x": 0.11874389648437
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -4.8095703125,
-                    "x": 1.92347717285156
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -8.92877197265625,
-                    "x": 0.09193420410156
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -9.5709228515625,
-                    "x": 2.90248107910156
-                },
-                {
-                    "z": 0.02879333496093,
-                    "y": -8.632080078125,
-                    "x": 1.98301696777343
-                }
-            ]
+            "imgs": [{
+                "url": "https://r2.fivemanage.com/images/jFyCZixN3CcZ.png"
+            }],
+            "model": "envi_shell_03_furnished"
         }
     }
 }

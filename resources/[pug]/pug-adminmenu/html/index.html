@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pug Admin Menu</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+
+
+  <link href="style.css" rel="stylesheet" />
+
+  
+
+</head>
+
+<body>
+  <div id="donutTip" class="donutTip"></div>
+  
+  <div id="root" class="overlay" style="display:none;">
+    <div class="panel">
+    <div class="topbar" id="topbar">
+            <div class="tbLeft">
+              <div class="tbChip" id="tbPlayers"><span class="k">Players:</span><span class="v" id="tbPlayersVal">0/0</span></div>
+              <div class="tbChip" id="tbUptime"><span class="k">Uptime:</span><span class="v" id="tbUptimeVal">0m</span></div>
+            </div>
+    
+            <div class="tbMid">
+              <div class="tbSlider">
+                <span class="k">Opacity</span>
+                <input id="tbOpacity" type="range" min="40" max="100" step="1" value="100" />
+              </div>
+            </div>
+    
+            <div class="tbRight">
+              <div class="tbUser">
+                <div class="tbAvatar" id="tbAvatar">??</div>
+                <div style="min-width:0;">
+                  <div class="tbName" id="tbName">Unknown</div>
+                  <div class="tbSub" id="tbRole"> </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+    <!-- Dock/Tablet toggle tabs -->
+    <button class="dock-tab dock-tab-left" id="dockToCenter" title="Expand">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <button class="dock-tab dock-tab-right" id="dockToRight" title="Dock">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <div class="panel-inner">
+      
+
+
+      <div class="rail">
+        <button class="rail-btn" id="btn-back" title="Back" style="opacity:.9;">
+          <span class="ic">‹</span>
+        </button>
+
+        <div class="rail-spacer"></div>
+<button class="rail-btn" id="btn-dashboard" title="Dashboard">
+  <span class="ic"><i class="fas fa-chart-line"></i></span>
+</button>
+
+<button class="rail-btn" id="btn-stats" title="Statistics">
+  <span class="ic"><i class="fas fa-chart-simple"></i></span>
+</button>
+
+<button class="rail-btn" id="btn-reports" title="Reports">
+  <span class="ic"><i class="fas fa-flag"></i></span>
+  <span class="railDot" id="reportsDot" style="display:none;"></span>
+</button>
+
+<button class="rail-btn" id="btn-staffchat" title="Staff Chat">
+  <span class="ic"><i class="fas fa-comments"></i></span>
+</button>
+
+
+        <button class="rail-btn" id="btn-players" title="Players">
+          <span class="ic"><i class="fas fa-user"></i></span>
+        </button>
+
+        <button class="rail-btn" id="btn-logs" title="Logs">
+          <span class="ic"><i class="fas fa-clipboard-list"></i></span>
+        </button>
+
+        <button class="rail-btn" id="btn-bans" title="Bans">
+          <span class="ic"><i class="fas fa-ban"></i></span>
+        </button>
+
+        <button class="rail-btn" id="btn-resources" title="Resources">
+          <span class="ic"><i class="fas fa-cubes"></i></span>
+        </button>
+
+        <button class="rail-btn" id="btn-actions" title="Actions">
+          <span class="ic"><i class="fa-solid fa-code"></i></span>
+        </button>
+
+        <button class="rail-btn" id="btn-settings" title="Settings">
+          <span class="ic"><i class="fas fa-gear"></i></span>
+        </button>
+
+        
+        <!-- Report-only tabs (only visible when /report UI is open) -->
+        <button class="rail-btn report-tab" id="btn-report-my" title="Reports">
+          <span class="ic"><i class="fas fa-flag"></i></span>
+        </button>
+
+        <button class="rail-btn report-tab" id="btn-report-create" title="New Report">
+          <span class="ic"><i class="fas fa-plus"></i></span>
+        </button>
+
+        <button class="rail-btn danger" id="btn-close" title="Close">
+          <span class="ic">✕</span>
+        </button>
+      </div>
+
+      <div class="main">
+        <div class="head">
+          <div class="title">Actions</div>
+        </div>
+
+        <div class="quick" id="quick"></div>
+
+        <div class="search" id="searchWrap">
+          <span class="search-ic">⌕</span>
+          <input id="search" type="text" placeholder="Search" autocomplete="off" />
+        </div>
+
+        <div class="tabs" id="tabs">
+          <button class="tab active" id="tab-all">All Actions</button>
+          <button class="tab" id="tab-fav">Favorites</button>
+        </div>
+
+        <div class="list" id="list"></div>
+      </div>
+      </div>
+    </div>
+  </div>
+  <!-- Fullscreen Warning Overlay (txAdmin-style) -->
+  <div id="warnOverlay" style="display:none;">
+    <div class="warnPulse"></div>
+
+    <div class="warnCenter">
+      <div class="warnHeader">ADMIN WARNING</div>
+
+      <div class="warnMeta" id="warnMeta">Issued by: Unknown</div>
+
+      <div class="warnMessage" id="warnMessage"></div>
+
+      <div class="warnHoldRow">
+        <div class="warnHoldLabel" id="warnHoldLabel">HOLD ENTER FOR 5 SECONDS</div>
+        <div class="warnHoldBar">
+          <div class="warnHoldFill" id="warnHoldFill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hintOverlay" style="display:none;">
+    <div class="hintBox" id="hintText"></div>
+  </div>
+
+  <div id="toastRoot" class="toastRoot" style="display:none;"></div>
+  <div id="toastRootCenter" class="toastRoot toastRoot--center" style="display:none;"></div>
+
+<div id="toastPosOverlay" class="toastPosOverlay" style="display:none;">
+  <div class="toastPosHint" id="toastPosHint">
+    <div class="toastPosTitle">Position notifications</div>
+    <div class="toastPosSub">Drag the preview to where you want notifications to appear, then click Save. (ESC cancels)</div>
+    <div class="toastPosBtns">
+      <button class="btn" id="toastPosSave">Save</button>
+      <button class="btn ghost" id="toastPosCancel">Cancel</button>
+    </div>
+  </div>
+  <div id="toastPosGhost" class="toastRoot toastPosGhost" style="display:none;"></div>
+</div>
+
+  <!-- Custom Color Picker Overlay -->
+  <div id="cpOverlay" class="cpOverlay">
+    <div class="cpModal" role="dialog" aria-modal="true">
+      <div class="cpHead">
+        <div class="cpTitle">
+          <i class="fas fa-palette" style="opacity:.9;"></i>
+          <span id="cpTitleText">Pick Color</span>
+        </div>
+        <button class="cpClose" id="cpClose" type="button" title="Close">✕</button>
+      </div>
+
+      <div class="cpBody">
+        <div class="cpSVWrap">
+          <canvas id="cpSV"></canvas>
+          <div class="cpSVHandle" id="cpSVHandle"></div>
+        </div>
+
+        <div class="cpHueCol">
+          <div class="cpHueWrap">
+            <canvas id="cpHue"></canvas>
+            <div class="cpHueHandle" id="cpHueHandle"></div>
+          </div>
+          <div class="cpPreview" id="cpPreview"></div>
+        </div>
+      </div>
+
+      <div class="cpFields">
+        <div class="cpGrid">
+          <div class="cpMini">
+            <label>HEX</label>
+            <input class="text" id="cpHex" type="text" autocomplete="off" />
+          </div>
+          <div class="cpMini">
+            <label>R</label>
+            <input class="text" id="cpR" type="number" min="0" max="255" />
+          </div>
+          <div class="cpMini">
+            <label>G</label>
+            <input class="text" id="cpG" type="number" min="0" max="255" />
+          </div>
+          <div class="cpMini">
+            <label>B</label>
+            <input class="text" id="cpB" type="number" min="0" max="255" />
+          </div>
+        </div>
+
+        <div class="cpActions">
+          <button class="btn ghost" id="cpCancel" type="button">Cancel</button>
+          <button class="btn" id="cpApply" type="button">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  
+  <!-- Vehicle Modal (edit garage/state) -->
+  <div id="vehModalOverlay" class="vehModalOverlay">
+    <div class="vehModal" role="dialog" aria-modal="true">
+      <div class="vehModalHead">
+        <div class="vehModalTitle">
+          <i class="fas fa-warehouse" style="opacity:.9;"></i>
+          <span id="vehModalTitle">Vehicle</span>
+        </div>
+        <button class="vehModalClose" id="vehModalClose" type="button" title="Close">✕</button>
+      </div>
+
+      <div class="vehModalBody">
+        <div class="vehFormRow">
+          <div class="k">Plate</div>
+          <div id="vehPlateText" style="font-weight:900;letter-spacing:.3px;"></div>
+        </div>
+
+        <div class="vehFormRow">
+          <div class="k">Garage</div>
+          <input id="vehGarageInput" class="vehInput" type="text" autocomplete="off" />
+        </div>
+
+        <div class="vehFormRow">
+          <div class="k">State</div>
+          <div class="dd" id="vehStateDD" data-dd-type="select" data-k="vehState" data-dd-options='[{"value":"1","label":"Inside"},{"value":"0","label":"Outside"}]' data-placeholder="Select...">
+            <input type="hidden" id="vehStateSelect" data-k="vehState" value="1" />
+            <button type="button" class="ddBtn" aria-expanded="false">
+              <span class="ddTxt">Select...</span>
+              <span class="ddCaret">▾</span>
+            </button>
+            <div class="ddMenu">
+              <div class="ddSearch">
+                <span class="search-ic">⌕</span>
+                <input type="text" placeholder="Search..." autocomplete="off" />
+              </div>
+              <div class="ddList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vehHint">Updates the vehicle row in the database.</div>
+      </div>
+
+      <div class="vehModalFoot">
+        <button class="btn ghost" id="vehCancelBtn" type="button">Cancel</button>
+        <button class="btn" id="vehSaveBtn" type="button"><i class="fas fa-floppy-disk" style="margin-right:8px;"></i>Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirmOverlay" class="vehModalOverlay">
+    <div class="vehModal" role="dialog" aria-modal="true" style="width:480px;">
+      <div class="vehModalHead">
+        <div class="vehModalTitle">
+          <i class="fas fa-triangle-exclamation" style="opacity:.9;color:var(--danger);"></i>
+          <span id="confirmTitle">Confirm</span>
+        </div>
+        <button class="vehModalClose" id="confirmClose" type="button" title="Close">✕</button>
+      </div>
+      <div class="vehModalBody">
+        <div id="confirmText" style="font-weight:800;opacity:.9;"></div>
+      </div>
+      <div class="vehModalFoot">
+        <button class="btn ghost" id="confirmCancel" type="button">Cancel</button>
+        <button class="btn danger" id="confirmOk" type="button"><i class="fas fa-trash" style="margin-right:8px;"></i>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Screenshot Modal -->
+  <div id="ssOverlay" class="vehModalOverlay">
+    <div class="vehModal ssModal" role="dialog" aria-modal="true">
+      <div class="vehModalHead">
+        <div class="vehModalTitle">
+          <i class="fas fa-camera" style="opacity:.9;"></i>
+          <span id="ssTitle">Screenshot</span>
+        </div>
+        <button class="vehModalClose" id="ssClose" type="button" title="Close">✕</button>
+      </div>
+
+      <div class="vehModalBody ssBody">
+        <img id="ssImg" class="ssImg" src="" alt="Screenshot" />
+      </div>
+
+      <div class="vehModalFoot">
+        <button class="btn ghost" id="ssDownload" type="button">
+          <i class="fas fa-download" style="margin-right:8px;"></i>Download
+        </button>
+        <button class="btn" id="ssOk" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

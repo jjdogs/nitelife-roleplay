@@ -4,8 +4,10 @@ local appearanceCam  = nil
 local camAngle       = 0.0
 local camDistance    = 0.0  -- initialised from config on open
 local camHeight      = 0.6
-local currentCitizenId = nil
-local currentGender    = 0
+local currentCitizenId  = nil
+local currentGender     = 0
+local appearanceContext = 'creation' -- 'creation' or 'wardrobe'
+local currentSections   = nil        -- nil = all sections visible
 
 local currentAppearance = {
     headBlend     = { shapeFirst = 0, shapeSecond = 0, skinFirst = 0, skinSecond = 0, shapeMix = 0.5, skinMix = 0.5 },
@@ -287,6 +289,7 @@ local function openAppearanceNUI()
         panelPosition   = Config.PanelPosition,
         appearanceReady = true,
         gender          = currentGender,
+        sections        = currentSections,
     })
     -- Send saved appearance to pre-populate sliders if we loaded one
     if nuiInitAppearance then
@@ -393,7 +396,7 @@ local function closeAppearanceNUI()
     local ped = PlayerPedId()
     ClearPedTasks(ped)
     FreezeEntityPosition(ped, false)
-    print('[nt_appearance] Closed appearance editor')
+    print('[nt_appearance] closeAppearanceNUI: editor closed')
 end
 
 -- ── Open event (called by nt_character after character creation) ───────────────
@@ -401,8 +404,10 @@ end
 RegisterNetEvent('nt_appearance:open')
 AddEventHandler('nt_appearance:open', function(citizenid, gender)
     print('[nt_appearance] Received open event for citizenid: ' .. tostring(citizenid) .. ', gender: ' .. tostring(gender))
-    currentCitizenId = citizenid
-    currentGender    = gender or 0
+    currentCitizenId  = citizenid
+    currentGender     = gender or 0
+    appearanceContext = 'creation'
+    currentSections   = nil
     CreateThread(function()
         openAppearanceNUI()
     end)
@@ -410,12 +415,30 @@ end)
 
 RegisterNetEvent('nt_appearance:appearanceSaved')
 AddEventHandler('nt_appearance:appearanceSaved', function()
-    print('[nt_appearance] Appearance saved successfully')
     -- Capture before closeAppearanceNUI() nils currentCitizenId
     local savedCitizenId = currentCitizenId
+    local savedContext   = appearanceContext
+    print('[nt_appearance] appearanceSaved fired, context: ' .. tostring(savedContext))
     closeAppearanceNUI()
-    print('[nt_appearance] Firing nt_appearance:complete for citizenid: ' .. tostring(savedCitizenId))
-    TriggerEvent('nt_appearance:complete', savedCitizenId)
+
+    if savedContext == 'wardrobe' then
+        -- Changes are applied live during editing, but reload from DB to ensure the
+        -- ped reflects exactly what was persisted (avoids stale state on reconnect).
+        CreateThread(function()
+            Wait(500)  -- brief wait for DB write to complete before reading back
+            local playerData = exports['qbx_core']:GetPlayerData()
+            if playerData and playerData.citizenid then
+                print('[nt_appearance] Reloading appearance for: ' .. playerData.citizenid)
+                TriggerServerEvent('nt_appearance:loadAppearance', playerData.citizenid)
+            end
+        end)
+    elseif savedContext == 'creation' then
+        print('[nt_appearance] Firing nt_appearance:complete for citizenid: ' .. tostring(savedCitizenId))
+        TriggerEvent('nt_appearance:complete', savedCitizenId)
+    end
+
+    appearanceContext = 'creation' -- reset after every use
+    currentSections   = nil
 end)
 
 -- ── Commands ──────────────────────────────────────────────────────────────────
@@ -432,6 +455,8 @@ RegisterCommand('ntappearance', function(_, args)
     else
         currentGender = (playerData and playerData.charinfo and playerData.charinfo.gender) or 0
     end
+    appearanceContext = 'creation'
+    currentSections   = nil
     CreateThread(function()
         openAppearanceNUI()
     end)
@@ -871,8 +896,10 @@ AddEventHandler('nt_appearance:applyAppearance', function(model, skinJson)
         SetEntityCoords(ped, savedCoords.x, savedCoords.y, savedCoords.z, false, false, false, false)
         SetEntityHeading(ped, savedHeading)
 
-        -- Reveal ped now that skin is applied (editor manages its own visibility)
-        if not appearanceOpen then
+        -- Reveal ped only when actual appearance data was applied.
+        -- When called with nil params (new character with no saved appearance), skip the reveal
+        -- so the ped stays hidden until nt_appearance:open manages its own visibility.
+        if not appearanceOpen and (model or skinJson) then
             SetEntityVisible(ped, true, false)
             FreezeEntityPosition(ped, false)
         end
@@ -889,3 +916,28 @@ exports('ApplyAppearance', ApplyAppearance)
 exports('LoadAppearance', function(citizenid)
     TriggerServerEvent('nt_appearance:loadAppearance', citizenid)
 end)
+
+-- ── Wardrobe / shop exports ───────────────────────────────────────────────────
+
+local function openWithContext(context, sections)
+    local playerData = exports['qbx_core']:GetPlayerData()
+    currentCitizenId  = playerData and playerData.citizenid or nil
+    currentGender     = (playerData and playerData.charinfo and playerData.charinfo.gender) or 0
+    appearanceContext = context
+    currentSections   = sections
+    CreateThread(function() openAppearanceNUI() end)
+end
+
+-- Full editor — used for initial character creation flows called externally
+exports('openFullEditor', function() openWithContext('creation', nil)              end)
+-- Wardrobe — full editor but saves without triggering spawn selection
+exports('openWardrobe',   function() openWithContext('wardrobe', nil)              end)
+-- Granular single-section openers
+exports('openClothing',   function() openWithContext('wardrobe', {'clothing'})     end)
+exports('openHair',       function() openWithContext('wardrobe', {'hair'})         end)
+exports('openFace',       function() openWithContext('wardrobe', {'face'})         end)
+exports('openMakeup',     function() openWithContext('wardrobe', {'makeup'})       end)
+exports('openTattoos',    function() openWithContext('wardrobe', {'tattoos'})      end)
+-- Multi-section combos
+exports('openBarber',     function() openWithContext('wardrobe', {'hair', 'face'})   end)
+exports('openOutfits',    function() openWithContext('wardrobe', {'outfits'})         end)

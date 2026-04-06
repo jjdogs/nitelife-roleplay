@@ -8,6 +8,7 @@ end)
 
 local function alertAmbulance(src, text)
 	local ped = GetPlayerPed(src)
+	local coords = exports['nolag_properties']:GetEnterCoordinates(src) or GetEntityCoords(ped)
 	local coords = GetEntityCoords(ped)
 	local players = exports.qbx_core:GetQBPlayers()
 	for _, v in pairs(players) do

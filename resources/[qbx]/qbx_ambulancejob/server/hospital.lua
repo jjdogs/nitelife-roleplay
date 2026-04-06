@@ -129,6 +129,7 @@ exports('CheckIn', checkIn)
 
 local function respawn(src)
 	local player = exports.qbx_core:GetPlayer(src)
+	exports['nolag_properties']:ForceExitPlayer(src)
 	local closestHospital
 	if player.PlayerData.metadata.injail > 0 then
 		closestHospital = 'jail'

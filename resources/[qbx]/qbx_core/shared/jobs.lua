@@ -143,6 +143,7 @@ return {
             },
         },
     },
+    -- Edit qbx_core/shared/jobs.lua:
     ['realestate'] = {
         label = 'Real Estate',
         type = 'realestate',

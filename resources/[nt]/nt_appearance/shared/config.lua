@@ -1,6 +1,6 @@
 Config = {}
 
-Config.UseStarterApartment = false
+Config.UseStarterApartment = true
 
 Config.AppearanceLocation = {
     x = -1278.13,

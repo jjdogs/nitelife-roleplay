@@ -1,0 +1,22 @@
+{
+    "resourceName": "kq_shellbuilder",
+    "creator": "KuzQuality.com | Kuzkay",
+    "interiors": {
+        "starter_apartments": {
+            "label": "starter_apartments",
+            "model": "kq_sbx_shell_4",
+            "doorOffset": {
+                "x": 8.0,
+                "y": -2.0,
+                "z": 1.0,
+                "h":  90.0,
+                "width": 2.0
+            },
+            "stash": {
+                "maxweight": 80000000,
+                "slots": 120
+            },
+            "imgs": [{}]
+        }
+    }
+}

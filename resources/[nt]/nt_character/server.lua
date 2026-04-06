@@ -78,7 +78,7 @@ AddEventHandler('nt_character:getCharacters', function()
         })
     end
 
-    print('[nt_character] Loaded ' .. #result .. ' characters for ' .. license)
+    DebugPrint('Character', 'Loaded ' .. #result .. ' characters for ' .. license)
     TriggerClientEvent('nt_character:getCharacters:reply', src, result)
 end)
 
@@ -142,7 +142,7 @@ AddEventHandler('nt_character:createCharacter', function(data)
     )
 
     if id then
-        print('[nt_character] Created character ' .. citizenid .. ' for ' .. license)
+        DebugPrint('Character', 'Created character ' .. citizenid .. ' for ' .. license)
         TriggerClientEvent('nt_character:createCharacter:reply', src, true, citizenid)
     else
         TriggerClientEvent('nt_character:createCharacter:reply', src, false, 'Failed to insert into database')
@@ -165,7 +165,7 @@ AddEventHandler('nt_character:deleteCharacter', function(citizenid)
     )
 
     if not char then
-        print('[nt_character] WARNING: ' .. license .. ' tried to delete character they don\'t own: ' .. tostring(citizenid))
+        DebugPrint('Character', 'WARNING: ' .. license .. ' tried to delete character they don\'t own: ' .. tostring(citizenid))
         TriggerClientEvent('nt_character:deleteCharacter:reply', src, false)
         return
     end
@@ -175,17 +175,19 @@ AddEventHandler('nt_character:deleteCharacter', function(citizenid)
         { citizenid, license }
     )
 
-    print('[nt_character] Disabled character ' .. citizenid .. ' for ' .. license)
+    DebugPrint('Character', 'Disabled character ' .. citizenid .. ' for ' .. license)
     TriggerClientEvent('nt_character:deleteCharacter:reply', src, true)
 end)
 
 -- ── Active character tracking ──────────────────────────────────────────────
+--
+-- Called by nt_spawn/server.lua before qbx_core:Login so that playtime
+-- accounting and playerDropped saving remain in one place (this resource).
 
-RegisterNetEvent('nt_character:setActiveCharacter')
-AddEventHandler('nt_character:setActiveCharacter', function(citizenid)
-    local src = source
+exports('SetActiveCharacter', function(src, citizenid)
     activePlayers[src] = citizenid
-    print('[nt_character] Active character set for ' .. src .. ': ' .. citizenid)
+    sessionStart[src]  = os.time()
+    DebugPrint('Character', 'Active character set for ' .. src .. ': ' .. citizenid)
 end)
 
 AddEventHandler('playerDropped', function()
@@ -197,6 +199,7 @@ AddEventHandler('playerDropped', function()
     local coords  = GetEntityCoords(ped)
     local heading = GetEntityHeading(ped)
 
+    DebugPrint('Character', 'playerDropped - citizenid: ' .. tostring(citizenid) .. ', sessionStart: ' .. tostring(sessionStart[src]) .. ', elapsed: ' .. tostring(os.time() - (sessionStart[src] or os.time())))
     local elapsed = os.time() - (sessionStart[src] or os.time())
     local elapsedMinutes = math.floor(elapsed / 60)
 
@@ -205,103 +208,16 @@ AddEventHandler('playerDropped', function()
         { json.encode({ x = coords.x, y = coords.y, z = coords.z, w = heading }), elapsedMinutes, citizenid }
     )
 
-    print('[nt_character] Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
+    DebugPrint('Character', 'Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
     activePlayers[src] = nil
     sessionStart[src]  = nil
-end)
-
--- ── Spawn selection ────────────────────────────────────────────────────────
-
-RegisterNetEvent('nt_character:getSpawnLocations')
-AddEventHandler('nt_character:getSpawnLocations', function(citizenid)
-    local src     = source
-    local license = GetPlayerLicense(src)
-
-    local char = MySQL.single.await(
-        'SELECT position, job FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
-        { citizenid, license }
-    )
-
-    if not char then
-        print('[nt_character] WARNING: ' .. tostring(license) .. ' requested spawn locations for invalid character: ' .. tostring(citizenid))
-        TriggerClientEvent('nt_character:receiveSpawnLocations', src, {})
-        return
-    end
-
-    local locations = {}
-
-    -- Last location always first (skip if coords are near 0,0,0 — invalid/default position)
-    local position = json.decode(char.position)
-    if position and position.x and
-       (math.abs(position.x) > 5.0 or math.abs(position.y) > 5.0) then
-        table.insert(locations, {
-            id     = 'last_location',
-            label  = 'Last Location',
-            coords = position
-        })
-    end
-
-    -- Job location if employed
-    local job = json.decode(char.job)
-    if job and job.name ~= 'unemployed' then
-        local jobCoords = Config.JobLocations[job.name]
-        if jobCoords then
-            table.insert(locations, {
-                id     = 'job',
-                label  = job.label,
-                coords = jobCoords
-            })
-        end
-    end
-
-    -- Static locations up to MaxSpawnOptions
-    for _, loc in ipairs(Config.SpawnLocations) do
-        if #locations >= Config.MaxSpawnOptions then break end
-        table.insert(locations, loc)
-    end
-
-    TriggerClientEvent('nt_character:receiveSpawnLocations', src, locations)
-end)
-
-RegisterNetEvent('nt_character:spawnPlayer')
-AddEventHandler('nt_character:spawnPlayer', function(citizenid, coords)
-    local src     = source
-    local license = GetPlayerLicense(src)
-    print('[nt_character] spawnPlayer called — citizenid: ' .. tostring(citizenid) .. ', coords: ' .. json.encode(coords))
-
-    local char = MySQL.single.await(
-        'SELECT citizenid FROM players WHERE citizenid = ? AND license = ? AND disabled = 0',
-        { citizenid, license }
-    )
-
-    if not char then
-        print('[nt_character] WARNING: ' .. tostring(license) .. ' tried to spawn invalid character: ' .. tostring(citizenid))
-        return
-    end
-
-    -- Track active character and record session start time for playtime accounting
-    activePlayers[src] = citizenid
-    sessionStart[src]  = os.time()
-
-    -- Load character via qbx_core using Login(source, citizenid)
-    -- Login loads player data from DB, validates license ownership, and registers the player
-    -- in qbx_core's player table. CreatePlayer is the internal constructor and takes a data
-    -- table — calling it with (src, citizenid) was wrong and always failed silently.
-    local success = exports.qbx_core:Login(src, citizenid)
-
-    if success then
-        print('[nt_character] qbx_core Login succeeded for ' .. citizenid)
-        TriggerClientEvent('nt_character:playerReady', src)
-    else
-        print('[nt_character] qbx_core Login failed for ' .. citizenid .. ' — cannot spawn')
-    end
 end)
 
 -- ── Logout command ─────────────────────────────────────────────────────────
 
 RegisterCommand('logout', function(src)
     local citizenid = activePlayers[src]
-    print('[nt_character] logout — src: ' .. src .. ', citizenid: ' .. tostring(citizenid))
+    DebugPrint('Character', 'logout — src: ' .. src .. ', citizenid: ' .. tostring(citizenid))
 
     if citizenid then
         local elapsed        = os.time() - (sessionStart[src] or os.time())
@@ -312,11 +228,13 @@ RegisterCommand('logout', function(src)
             { elapsedMinutes, citizenid }
         )
 
-        print('[nt_character] Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
+        DebugPrint('Character', 'Saved logout for ' .. citizenid .. ' (session: ' .. elapsedMinutes .. 'm)')
     end
 
     activePlayers[src] = nil
     sessionStart[src]  = nil
     exports.qbx_core:Logout(src)
+    -- Clean up any in-progress spawn selection in nt_spawn
+    TriggerClientEvent('nt_spawn:cancelAndReset', src)
     TriggerClientEvent('nt_character:openNUI', src)
 end, false)

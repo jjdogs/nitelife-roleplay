@@ -5,14 +5,13 @@ lua54 'yes'
 
 description 'Properties system for FiveM.'
 author 'NoLag Development'
-version '2.4.6'
+version '2.4.7'
 
 shared_scripts {
   '@ox_lib/init.lua',
   'config.lua',
   'shared/init.lua',
   'furniture.lua',
-  'shells.lua',
   'ipls.lua',
   'custom/garages/*.lua',
   'custom/weather/*.lua',
@@ -81,7 +80,6 @@ escrow_ignore {
   'custom/furniture/*.lua',
   'custom/logs/*.lua',
   'custom/banking/*.lua',
-  'shells.lua',
   'ipls.lua',
   'furniture.lua',
   'config.lua'

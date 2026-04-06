@@ -1,0 +1,14 @@
+{
+  "name": "blueprint-creator",
+  "version": "1.0.0",
+  "description": "Create blueprint images by overlaying item images onto a blueprint template",
+  "main": "create-blueprint.js",
+  "scripts": {
+    "blueprint": "node create-blueprint.js",
+    "batch": "node batch-create.js",
+    "help": "node create-blueprint.js --help"
+  },
+  "dependencies": {
+    "sharp": "^0.33.2"
+  }
+}
