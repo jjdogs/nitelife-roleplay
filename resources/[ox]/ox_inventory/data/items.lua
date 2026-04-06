@@ -690,6 +690,40 @@ return {
         }
     },
 
+    -- wasabi_police items
+    ['bobby_pin'] = {
+        label = 'Bobby Pin',
+        weight = 2500,
+        stack = true,
+        close = true,
+        description = 'Can be used as a makeshift tool for picking locks',
+    },
+
+    ['tracking_bracelet'] = {
+        label = 'Tracking Bracelet',
+        weight = 2500,
+        stack = false,
+        close = true,
+        description = 'Can be used for tracking a suspect',
+    },
+
+    -- snipe-evidence items
+    ['accesstool'] = {
+        label = 'Access Tool',
+        weight = 500,
+        stack = false,
+        close = true,
+        description = 'Used to access a vehicle',
+    },
+
+    ['evidence_tweezers'] = {
+        label = 'Evidence Tweezers',
+        weight = 200,
+        stack = true,
+        close = true,
+        description = 'Used to collect evidence from a crime scene',
+    },
+
     ['lockpick'] = {
         label = 'Lockpick',
         weight = 160,
