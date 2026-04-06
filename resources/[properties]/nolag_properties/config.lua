@@ -89,7 +89,7 @@ Config = {
     LockDoorsByDefault = false,
     ExitEnterWhileLocked = true,
     OpenForPreview = true,
-    SpawnInProperty = true,
+    SpawnInProperty = false,
     PropertyPrice = {
         1,
         1000000,

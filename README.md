@@ -14,43 +14,44 @@
 
 ---
 
-## Phase 2 — Foundation & Admin `In Progress`
+## Phase 2 — Foundation & Admin `Complete`
+`
 
 **Tasks**
-- [x ] nt_character phase 10 (bug fixes)
-- [ x] pug-adminmenu setup
-- [x ] ox_inventory config
-- [ x] Basic ACE permissions
-- [ x] server.cfg cleanup
+- [x] nt_character phase 10 (bug fixes)
+- [x] pug-adminmenu setup
+- [x] ox_inventory config
+- [x] Basic ACE permissions
+- [x] server.cfg cleanup
 
 > Get admin tooling and inventory sorted before adding any job content
 
 ---
 
-## Phase 3 — Economy Backbone `Planned`
+## Phase 3 — Economy Backbone `Complete`
 
 **Tasks**
-- [ ] yphone setup
-- [ ] lation_shops config
-- [ ] lation_ui config
-- [ ] jg-dealerships
-- [ ] jg-advancedgarages
-- [ ] Renewed Fuel
-- [ ] okokCrafting
-- [ ] Banking / money flows
+- [x] yphone setup (Get Working)
+- [x] lation_shops config (Get Working)
+- [x] lation_ui config
+- [x] jg-dealerships (Get Working, no dealerships yet)
+- [x] jg-advancedgarages
+- [x] Renewed Fuel (Get working, no gas stations yet)
+- [x] okokCrafting (SD Crafting) (Setup and get working/ready for phase 5 - 7)
+- [x] Banking / money flows (Depends on Phase 5 - 7)
 
 > Players need to be able to earn, spend, and move money before jobs make sense
 
 ---
 
-## Phase 4 — Housing & Properties `Planned`
+## Phase 4 — Housing & Properties `Complete`
 
 **Tasks**
-- [ ] nolag_properties
-- [ ] KQ Shell Creator
-- [ ] envi-starter-shells-pack
-- [ ] K4MB1-StarterShells
-- [ ] KQ Prop Placer
+- [x] nolag_properties
+- [x] KQ Shell Creator
+- [x] envi-starter-shells-pack
+- [x] K4MB1-StarterShells
+- [x] KQ Prop Placer
 
 > Shell setup first, then properties on top — prop placer for interior dressing
 
@@ -58,8 +59,10 @@
 
 ## Phase 5 — Police Department `Planned`
 
-**Tasks**
-- [ ] qb-policejob-v2 (QBX port)
+## HEHE
+
+**Tasks** 
+- [] qb-policejob-v2 (QBX port)
 - [ ] wasabi_police
 - [ ] wasabi_bridge
 - [ ] Advanced Evidence System

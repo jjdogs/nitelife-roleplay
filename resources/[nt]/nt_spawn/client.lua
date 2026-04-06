@@ -81,6 +81,18 @@ AddEventHandler('nt_spawn:cancelAndReset', function()
     pendingSpawnPropertyId = nil
     spawnGender            = nil
     closeSpawnNUI()
+
+    -- Force-remove all nolag_properties ox_target zones.
+    -- nolag_properties' own playerLoggedOut cleanup is unreliable; without this,
+    -- zones accumulate across character switches (each login adds a new set).
+    if lib and lib.zones then
+        for _, zone in pairs(lib.zones.getAllZones()) do
+            if zone.resource == 'nolag_properties' then
+                zone:remove()
+            end
+        end
+        DebugPrint('Spawn', 'cancelAndReset — nolag_properties zones cleared')
+    end
 end)
 
 -- ── NUI callbacks ─────────────────────────────────────────────────────────────
@@ -208,14 +220,20 @@ AddEventHandler('nt_spawn:playerReady', function(coords, isNewChar, propertyId)
     end
 
     CreateThread(function()
+        -- Fire onPlayerLoaded first — nolag_properties polls its internal property cache inside
+        -- WrapIntoProperty (waiting up to 30s); that cache is only populated once this fires.
+        TriggerServerEvent('QBCore:Server:OnPlayerLoaded')
+        TriggerEvent('QBCore:Client:OnPlayerLoaded')
+        TriggerEvent('qbx_core:client:onPlayerLoaded')
+
         if isNewChar then
             if propertyId then
                 -- Enter starter apartment shell. Loading overlay stays visible throughout.
                 -- Screen is already black from DoScreenFadeOut in nt_character's createCharacter.
                 DebugPrint('Spawn', 'New character — entering apartment: ' .. tostring(propertyId))
-                Wait(1000)  -- let qbx_core + nolag_properties finish data init
+                Wait(1000)  -- let nolag_properties finish loading property data
                 exports.nolag_properties:WrapIntoProperty(propertyId)
-                Wait(500)   -- settle before firing loaded events
+                Wait(500)
             else
                 -- AddStarterApartment failed — teleport to default spawn
                 DebugPrint('Spawn', 'New character — no apartment, using default spawn')
@@ -223,14 +241,6 @@ AddEventHandler('nt_spawn:playerReady', function(coords, isNewChar, propertyId)
                 SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
                 SetEntityHeading(ped, coords.w or 0)
             end
-
-            -- Fire onPlayerLoaded AFTER the player is in their final position.
-            -- Firing before WrapIntoProperty causes nolag_properties to register exterior
-            -- property zones first, then WrapIntoProperty registers interior zones — resulting
-            -- in duplicate "Manage Property" interactions that accumulate across sessions.
-            TriggerServerEvent('QBCore:Server:OnPlayerLoaded')
-            TriggerEvent('QBCore:Client:OnPlayerLoaded')
-            TriggerEvent('qbx_core:client:onPlayerLoaded')
 
             -- Dismiss loading overlay, then hand off to nt_appearance.
             -- nt_appearance's DoScreenFadeOut(300) is a no-op (screen already black);
@@ -246,11 +256,6 @@ AddEventHandler('nt_spawn:playerReady', function(coords, isNewChar, propertyId)
             Wait(500)
             exports.nolag_properties:WrapIntoProperty(pendingSpawnPropertyId)
             pendingSpawnPropertyId = nil
-
-            -- Fire onPlayerLoaded AFTER apartment entry (same reason as new character case above).
-            TriggerServerEvent('QBCore:Server:OnPlayerLoaded')
-            TriggerEvent('QBCore:Client:OnPlayerLoaded')
-            TriggerEvent('qbx_core:client:onPlayerLoaded')
 
             -- Fallback: if nt_appearance hasn't revealed the ped within 3 s, do it now.
             Wait(3000)
@@ -284,10 +289,6 @@ AddEventHandler('nt_spawn:playerReady', function(coords, isNewChar, propertyId)
 
                 pendingSpawnCoords = nil
             end
-
-            TriggerServerEvent('QBCore:Server:OnPlayerLoaded')
-            TriggerEvent('QBCore:Client:OnPlayerLoaded')
-            TriggerEvent('qbx_core:client:onPlayerLoaded')
 
             -- Fallback: if nt_appearance hasn't revealed the ped within 3 s, do it now.
             Wait(3000)
