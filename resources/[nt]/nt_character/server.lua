@@ -170,10 +170,12 @@ AddEventHandler('nt_character:deleteCharacter', function(citizenid)
         return
     end
 
-    MySQL.update.await(
-        'UPDATE players SET disabled = 1 WHERE citizenid = ? AND license = ?',
-        { citizenid, license }
-    )
+    -- MySQL.update.await(
+    --     'UPDATE players SET disabled = 1 WHERE citizenid = ? AND license = ?',
+    --     { citizenid, license }
+    -- )
+
+    MySQL.update.await('DELETE FROM players WHERE citizenid = ? AND license = ?',{ citizenid, license }) -- Perm Delete Character | Clears up space & keeps things clean
 
     DebugPrint('Character', 'Disabled character ' .. citizenid .. ' for ' .. license)
     TriggerClientEvent('nt_character:deleteCharacter:reply', src, true)

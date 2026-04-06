@@ -27,7 +27,7 @@ local function giveStarterItems(source)
     local player = exports.qbx_core:GetPlayer(source)
     local citizenId = player.PlayerData.citizenid
 
-    exports.nolag_properties:AddStarterApartment(citizenId)
+    -- exports.nolag_properties:AddStarterApartment(citizenId)
 end
 
 lib.callback.register('qbx_core:server:getCharacters', function(source)

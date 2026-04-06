@@ -46,7 +46,7 @@ Config.QBOldJobMethod = false -- use the old method to check job in qb-core? thi
 Config.Item = {}
 -- If you want to set up multiple items & frame colours, see https://docs.lbscripts.com/phone/configuration/#multiple-items--colored-phones
 Config.Item.Require = true -- require a phone item to use the phone
-Config.Item.Name = "phone" -- name of the phone item
+-- Config.Item.Name = "phone" -- name of the phone item
 Config.Item.Names = {
     {
         name = "phone",
