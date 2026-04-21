@@ -52,9 +52,7 @@ exec loadscreen.cfg
 # ── Weather ───────────────────────────────────────────────────────────────────
 setr weather_disablecd true
 
-set rcon_password "1234"
 # ── Resources ─────────────────────────────────────────────────────────────────
-ensure rconlog
 ensure mapmanager
 ensure chat
 ensure spawnmanager
@@ -62,6 +60,7 @@ ensure sessionmanager
 stop basic-gamemode
 ensure hardcap
 ensure baseevents
+# ensure rconlog
 
 ensure lation_ui
 ensure ox_lib
@@ -72,7 +71,6 @@ ensure [sd]
 ensure nt_sqloptimizer
 ensure [fuel]
 ensure [qbx]
-stop qbx_police
 ensure [standalone]
 ensure [voice]
 ensure [assets]
@@ -93,11 +91,6 @@ ensure [phone]
 ensure [nt]
 ensure [pug]
 ensure [okok]
-
-# ── Police Department ──────────────────────────────────────────────────────────
-ensure [wasabi]
-ensure [ps]
-ensure [evidence]
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 add_principal identifier.fivem:7140163 group.admin # JJ

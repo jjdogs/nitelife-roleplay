@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start FXServer",
+            "type": "shell",
+            "command": "A:\\NiteLife\\server\\FXServer.exe",
+            "args": [],
+            "options": {
+                "cwd": "A:\\NiteLife\\server"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true,
+                "close": false
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

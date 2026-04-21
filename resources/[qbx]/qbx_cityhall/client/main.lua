@@ -188,7 +188,7 @@ local function spawnPeds()
                 icon = 'fa-solid fa-city',
                 label = locale('info.target_open_cityhall'),
                 distance = 1.5,
-                debug = true,
+                debug = false,
                 onSelect = function()
                     inRangeCityhall = true
                     openCityhallMenu()

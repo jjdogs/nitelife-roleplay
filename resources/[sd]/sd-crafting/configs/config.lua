@@ -216,39 +216,39 @@ return {
     -- ==========================================
     -- Shop peds that sell workbenches and crafting items
     Shops = {
-        ['workbench_vendor'] = {
-            label = 'Workbench Vendor',
-            coords = vector3(342.95, -1298.04, 32.51), -- Position of the ped
-            heading = 159.2, -- Direction the ped faces
-            model = 's_m_m_autoshop_02', -- Ped model
-            spawnRadius = 50.0, -- Distance at which ped spawns
-            scenario = 'WORLD_HUMAN_CLIPBOARD', -- Ped animation/scenario
-            useItemImages = false, -- If true, uses item images from inventory. If false, uses the icon defined per item
-            blip = {
-                enabled = true,
-                sprite = 566, -- Wrench/tool icon
-                color = 2,
-                scale = 0.7,
-                label = 'Workbench Vendor'
-            },
-            -- Items this shop sells
-            items = {
-                {
-                    id = 'workbench',
-                    label = 'Basic Workbench',
-                    description = 'A small portable workbench for crafting on the go',
-                    icon = 'fa-solid fa-toolbox',
-                    price = 5000,
-                },
-                {
-                    id = 'advanced_workbench',
-                    label = 'Advanced Workbench',
-                    description = 'A high-tech workbench with advanced crafting capabilities',
-                    icon = 'fa-solid fa-gears',
-                    price = 15000,
-                },
-            }
-        },
+        -- ['workbench_vendor'] = {
+        --     label = 'Workbench Vendor',
+        --     coords = vector3(342.95, -1298.04, 32.51), -- Position of the ped
+        --     heading = 159.2, -- Direction the ped faces
+        --     model = 's_m_m_autoshop_02', -- Ped model
+        --     spawnRadius = 50.0, -- Distance at which ped spawns
+        --     scenario = 'WORLD_HUMAN_CLIPBOARD', -- Ped animation/scenario
+        --     useItemImages = false, -- If true, uses item images from inventory. If false, uses the icon defined per item
+        --     blip = {
+        --         enabled = true,
+        --         sprite = 566, -- Wrench/tool icon
+        --         color = 2,
+        --         scale = 0.7,
+        --         label = 'Workbench Vendor'
+        --     },
+        --     -- Items this shop sells
+        --     items = {
+        --         {
+        --             id = 'workbench',
+        --             label = 'Basic Workbench',
+        --             description = 'A small portable workbench for crafting on the go',
+        --             icon = 'fa-solid fa-toolbox',
+        --             price = 5000,
+        --         },
+        --         {
+        --             id = 'advanced_workbench',
+        --             label = 'Advanced Workbench',
+        --             description = 'A high-tech workbench with advanced crafting capabilities',
+        --             icon = 'fa-solid fa-gears',
+        --             price = 15000,
+        --         },
+        --     }
+        -- },
         -- Example of another shop
         -- ['materials_vendor'] = {
         --     label = 'Materials Vendor',

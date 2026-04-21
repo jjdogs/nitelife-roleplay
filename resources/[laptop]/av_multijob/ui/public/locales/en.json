@@ -1,0 +1,13 @@
+{
+  "header": "Job Manager",
+  "clock_in": "Clock In",
+  "clock_out": "Clock Out",
+  "quit_job": "Quit Job",
+  "on_duty": "On Duty",
+  "off_duty": "Off Duty",
+  "restricted": "Restricted",
+  "unemployed": "You don't have any job",
+  "max": "Max Jobs",
+  "key": "[ESC]",
+  "exit": "Exit"
+}

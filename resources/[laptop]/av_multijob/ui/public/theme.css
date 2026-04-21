@@ -1,0 +1,13 @@
+:root {
+  --bg-card: #161924;
+  --bg-container: #14161f;
+  --bg-badge: #1e212b;
+  --accent: #00f0ff;
+  --color-green: #00ff9d;
+  --color-red: #ff4757;
+  --color-yellow: #ffe066;
+  --text-main: #ffffff;
+  --text-dim: #8b9bb4;
+  --border: rgba(255, 255, 255, 0.08);
+  --font-display: "Rajdhani", sans-serif;
+}

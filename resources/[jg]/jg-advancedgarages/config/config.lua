@@ -281,6 +281,8 @@ Config.JobGarageUniqueBlips = false
 Config.JobGarageUniqueLocations = true
 Config.JobGarageEnableInteriors = true
 Config.JobGarageLocations = { -- IMPORTANT - Every garage name must be unique
+  -- Phase 5 — uncomment when Emergency Services phase begins
+  --[[
   ["Mechanic"] = {
     coords = vector3(157.86, -3005.9, 7.03),
     spawn = vector4(165.26, -3014.94, 5.9, 268.8),
@@ -295,7 +297,7 @@ Config.JobGarageLocations = { -- IMPORTANT - Every garage name must be unique
     },
     hideMarkers = true,
     markers = { id = 21, size = { x = 0.3, y = 0.3, z = 0.3 }, color = { r = 255, g = 255, b = 255, a = 120 }, bobUpAndDown = 0, faceCamera = 0, rotate = 1, drawOnEnts = 0 },
-    vehiclesType = "owned", -- Use owned vehicles that can anyone in this society can access - more details: https://docs.jgscripts.com/advanced-garages/job-and-gang-garages
+    vehiclesType = "owned",
   },
   ["Police"] = {
     coords = vector3(434.48, -1016.97, 28.83),
@@ -311,28 +313,14 @@ Config.JobGarageLocations = { -- IMPORTANT - Every garage name must be unique
     },
     hideMarkers = true,
     markers = { id = 21, size = { x = 0.3, y = 0.3, z = 0.3 }, color = { r = 255, g = 255, b = 255, a = 120 }, bobUpAndDown = 0, faceCamera = 0, rotate = 1, drawOnEnts = 0 },
-    vehiclesType = "spawner", -- Spawn a basic vehicle from a list
-    showLiveriesExtrasMenu = true, -- Allow player to select a livery and extras before pulling vehicle out 
+    vehiclesType = "spawner",
+    showLiveriesExtrasMenu = true,
     vehicles = {
-      [1] = {
-        model = "police", -- spawn code for vehicle
-        plate = "PD", -- set as false for a random plate; do not use a plate already in use in the DB!
-        minJobGrade = 0, -- only available to players with set minimum grade
-        nickname = "Police car", -- Show a custom name instead of the vehicle's real name
-        livery = 1,
-        extras = {1, 2},
-        maxMods = true
-      },
-      [2] = {
-        model = "police2",
-        plate = false,
-        minJobGrade = 3,
-        livery = 2,
-        extras = {},
-        maxMods = true
-      }
+      [1] = { model = "police", plate = "PD", minJobGrade = 0, nickname = "Police car", livery = 1, extras = {1, 2}, maxMods = true },
+      [2] = { model = "police2", plate = false, minJobGrade = 3, livery = 2, extras = {}, maxMods = true }
     }
-  }
+  },
+  --]]
 }
 
 -- Gang Garages (QBCore/Qbox only by default)
@@ -344,6 +332,8 @@ Config.GangGarageUniqueBlips = false
 Config.GangGarageUniqueLocations = true
 Config.GangGarageEnableInteriors = true
 Config.GangGarageLocations = { -- IMPORTANT - Every garage name must be unique
+  -- Phase 6 — uncomment when Criminal Roleplay phase begins
+  --[[
   ["The Lost MC"] = {
     coords = vector3(439.18, -1518.48, 29.28),
     spawn = vector4(439.18, -1518.48, 29.28, 139.06),
@@ -358,8 +348,9 @@ Config.GangGarageLocations = { -- IMPORTANT - Every garage name must be unique
     },
     hideMarkers = true,
     markers = { id = 21, size = { x = 0.3, y = 0.3, z = 0.3 }, color = { r = 255, g = 255, b = 255, a = 120 }, bobUpAndDown = 0, faceCamera = 0, rotate = 1, drawOnEnts = 0 },
-    vehiclesType = "personal", -- Use personal vehicles
-  }
+    vehiclesType = "personal",
+  },
+  --]]
 }
 
 -- Impound
@@ -369,6 +360,8 @@ Config.ImpoundShowBlips = true
 Config.ImpoundUniqueBlips = false
 Config.ImpoundTimeOptions = {0, 1, 4, 12, 24, 72, 168} -- in hours
 Config.ImpoundLocations = { -- IMPORTANT - Every impound name must be unique
+  -- Phase 5 — uncomment when Emergency Services phase begins
+  --[[
   ["Impound A"] = {
     coords = vector3(410.8, -1626.26, 29.29),
     spawn = vector4(408.44, -1630.88, 29.29, 136.88),
@@ -376,11 +369,7 @@ Config.ImpoundLocations = { -- IMPORTANT - Every impound name must be unique
     type = "car",
     job = {"police"},
     hideBlip = false,
-    blip = {
-      id = 68,
-      color = 0,
-      scale = 0.7
-    },
+    blip = { id = 68, color = 0, scale = 0.7 },
     hideMarkers = true,
     markers = { id = 21, size = { x = 0.3, y = 0.3, z = 0.3 }, color = { r = 255, g = 255, b = 255, a = 120 }, bobUpAndDown = 0, faceCamera = 0, rotate = 1, drawOnEnts = 0 },
   },
@@ -391,14 +380,11 @@ Config.ImpoundLocations = { -- IMPORTANT - Every impound name must be unique
     type = "car",
     job = {"police"},
     hideBlip = false,
-    blip = {
-      id = 68,
-      color = 0,
-      scale = 0.7
-    },
+    blip = { id = 68, color = 0, scale = 0.7 },
     hideMarkers = true,
     markers = { id = 21, size = { x = 0.3, y = 0.3, z = 0.3 }, color = { r = 255, g = 255, b = 255, a = 120 }, bobUpAndDown = 0, faceCamera = 0, rotate = 1, drawOnEnts = 0 },
-  }
+  },
+  --]]
 }
 
 -- Garage Interior

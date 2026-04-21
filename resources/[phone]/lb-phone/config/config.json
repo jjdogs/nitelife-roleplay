@@ -133,11 +133,6 @@
             "size": 84400,
             "images": ["1.webp", "2.webp", "3.webp", "4.webp"]
         },
-        "Wallet": {
-            "name": "Wallet",
-            "removable": false,
-            "size": 2000
-        },
         "Home": {
             "name": "Home",
             "removable": false,

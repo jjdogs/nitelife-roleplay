@@ -25,5 +25,5 @@ Config.notify = {
 Config.radial = {
     -- Default keybind for opening the radial menu
     -- This can be any valid key (see https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/keyboard/)
-    default_key = 'z'
+    default_key = 'MOUSE_MIDDLE'
 }

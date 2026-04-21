@@ -4,7 +4,7 @@ Config.Debug = false -- Set to true to enable debug mode
 Config.Logs = {}
 Config.Logs.Enabled = false
 -- Use code "LBLOGS" for 20% off the https://fivemanage.com/ Logs Pro plan.
-Config.Logs.Service = "discord" -- fivemanage, discord or ox_lib. if discord, set your webhook in server/apiKeys.lua
+Config.Logs.Service = "fivemanage" -- fivemanage, discord or ox_lib. if discord, set your webhook in server/apiKeys.lua
 Config.Logs.Avatar = false -- attempt to get the player's avatar for discord logging?
 Config.Logs.Dataset = "default" -- fivemanage dataset
 Config.Logs.Actions = {
@@ -273,7 +273,7 @@ Config.Valet.Drive = true -- should a ped bring the car, or should it just spawn
 Config.Valet.DisableDamages = false -- disable vehicle damages (engine & body health) on esx
 Config.Valet.FixTakeOut = false -- repair the vehicle after taking it out?
 
-Config.HouseScript = "auto" --[[
+Config.HouseScript = "nolag_properties" --[[
     The housing script you use on your server
     Supported:
         * loaf_housing - https://store.loaf-scripts.com/package/4310850

@@ -50,15 +50,8 @@ end
 --- @param price number Price per item
 --- @param metadata table|nil Item metadata
 function OnItemPurchased(source, shopId, item, quantity, price, metadata)
-    -- Example: Register weapon purchase
-    -- if shopId == 'weapon_shop' then
-    --     exports['your_mdt']:RegisterWeapon(source, item)
-    -- end
-
-    -- Example: Alert police for illegal purchases
-    -- if shopId == 'illegal_shop' then
-    --     TriggerEvent('police:alert', 'Illegal purchase detected')
-    -- end
+    -- Payment notification app (nt_pay) was removed — Phase 2 scope dropped.
+    -- Hook point preserved for future integrations.
 end
 
 --- Called when a shop is created by an admin

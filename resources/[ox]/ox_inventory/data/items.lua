@@ -4,140 +4,131 @@ return {
 
     ['id_card'] = {
         label = 'Identification Card',
+        description = 'Card used to indentify who you are.',
+        weight = 10,
     },
 
     ['driver_license'] = {
         label = 'Drivers License',
+        description = 'You need this to legally operate a vehicle in Los Santos.',
+        weight = 10,
     },
 
     ['weaponlicense'] = {
         label = 'Weapon License',
+        description = 'License that gives you the ability to buy guns legally. Ask a police officer about one!',
+        weight = 10,
     },
 
     ['lawyerpass'] = {
         label = 'Lawyer Pass',
+        description = 'This is used by Lawyers to verify they can represent someone.',
+        weight = 10,
     },
 
 -- ── Currency ──────────────────────────────────────────────────────────────────
 
     ['money'] = {
         label = 'Money',
+        description = 'Buy things with this!',
+        weight = 5,
     },
 
     ['black_money'] = {
         label = 'Dirty Money',
+        description = 'Usually used to purchase items that might be illegal. *Marked for Police Seizure*',
+        weight = 10,
     },
 
 -- ── Food & Drink ──────────────────────────────────────────────────────────────
 
     ['burger'] = {
-        label = 'Burger',
-        weight = 220,
-        client = {
-            status = { hunger = 200000 },
-            anim = 'eating',
-            prop = 'burger',
-            usetime = 2500,
-            notification = 'You ate a delicious burger'
-        },
+        label = 'Cheese Burger',
+        description = 'Yummy Burger plain with cheese.',
+        weight = 100,
+        -- client = {
+        --     status = { hunger = 200000 },
+        --     anim = 'eating',
+        --     prop = 'burger',
+        --     usetime = 2500,
+        --     notification = 'You ate a delicious burger'
+        -- },
     },
 
     ['sandwich'] = {
         label = 'Sandwich',
-        weight = 200,
-    },
-
-    ['mustard'] = {
-        label = 'Mustard',
-        weight = 500,
-        client = {
-            status = { hunger = 25000, thirst = 25000 },
-            anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
-            prop = { model = `prop_food_mustard`, pos = vec3(0.01, 0.0, -0.07), rot = vec3(1.0, 1.0, -1.5) },
-            usetime = 2500,
-            notification = 'You... drank mustard'
-        }
-    },
-
-    ['grape'] = {
-        label = 'Grape',
-        weight = 10,
-    },
-
-    ['grapejuice'] = {
-        label = 'Grape Juice',
-        weight = 200,
+        description = 'A yummy turkey & ham Sandwich!',
+        weight = 100,
     },
 
     ['coffee'] = {
         label = 'Coffee',
+        description = 'Nice hot coffee helps you wake up.',
         weight = 200,
     },
 
     ['wine'] = {
         label = 'Wine',
+        description = 'A glass of red wine. Goes well with a fancy dinner.',
         weight = 500,
     },
 
     ['vodka'] = {
         label = 'Vodka',
+        description = 'A bottle of vodka. Strong stuff, drink responsibly.',
         weight = 500,
     },
 
     ['whiskey'] = {
         label = 'Whiskey',
+        description = 'A smooth glass of whiskey. Perfect for unwinding after a long day.',
         weight = 200,
     },
 
     ['beer'] = {
         label = 'Beer',
+        description = 'A cold bottle of beer. Nothing beats this after a hard shift.',
         weight = 200,
     },
 
     ['water'] = {
         label = 'Water',
+        description = 'Fresh bottled water. Stay hydrated out there.',
         weight = 500,
-        client = {
-            status = { thirst = 200000 },
-            anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
-            prop = { model = `prop_ld_flow_bottle`, pos = vec3(0.03, 0.03, 0.02), rot = vec3(0.0, 0.0, -1.5) },
-            usetime = 2500,
-            cancel = true,
-            notification = 'You drank some refreshing water'
-        }
+        -- client = {
+        --     status = { thirst = 200000 },
+        --     anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+        --     prop = { model = `prop_ld_flow_bottle`, pos = vec3(0.03, 0.03, 0.02), rot = vec3(0.0, 0.0, -1.5) },
+        --     usetime = 2500,
+        --     cancel = true,
+        --     notification = 'You drank some refreshing water'
+        -- }
     },
 
     ['sprunk'] = {
         label = 'Sprunk',
+        description = 'A fan-favorite soda from Los Santos. Cold and refreshing!',
         weight = 350,
-        client = {
-            status = { thirst = 200000 },
-            anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
-            prop = { model = `prop_ld_can_01`, pos = vec3(0.01, 0.01, 0.06), rot = vec3(5.0, 5.0, -180.5) },
-            usetime = 2500,
-            notification = 'You quenched your thirst with a sprunk'
-        }
+        -- client = {
+        --     status = { thirst = 200000 },
+        --     anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
+        --     prop = { model = `prop_ld_can_01`, pos = vec3(0.01, 0.01, 0.06), rot = vec3(5.0, 5.0, -180.5) },
+        --     usetime = 2500,
+        --     notification = 'You quenched your thirst with a sprunk'
+        -- }
     },
 
 -- ── Medical ───────────────────────────────────────────────────────────────────
 
     ['bandage'] = {
         label = 'Bandage',
+        description = 'A basic cloth bandage for patching up minor wounds.',
         weight = 115,
-    },
-
-    ['firstaid'] = {
-        label = 'First Aid',
-        weight = 2500,
-    },
-
-    ['ifaks'] = {
-        label = 'Individual First Aid Kit',
-        weight = 2500,
     },
 
     ['painkillers'] = {
         label = 'Painkillers',
+        description = 'Over-the-counter painkillers to help manage pain.',
         weight = 400,
     },
 
@@ -145,41 +136,48 @@ return {
 
     ['armour'] = {
         label = 'Bulletproof Vest',
+        description = 'A bulletproof vest that provides protection against gunfire.',
         weight = 3000,
         stack = false,
-        client = {
-            anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
-            usetime = 3500
-        }
+        -- client = {
+        --     anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
+        --     usetime = 3500
+        -- }
     },
 
     ['clothing'] = {
         label = 'Clothing',
+        description = 'An article of clothing.',
+        weight = 0,
         consume = 0,
     },
 
     ['parachute'] = {
         label = 'Parachute',
+        description = 'A parachute for safely landing after a high altitude jump.',
         weight = 8000,
         stack = false,
-        client = {
-            anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
-            usetime = 1500
-        }
+        -- client = {
+        --     anim = { dict = 'clothingshirt', clip = 'try_shirt_positive_d' },
+        --     usetime = 1500
+        -- }
     },
 
     ['harness'] = {
         label = 'Harness',
+        description = 'A safety harness for working at heights or extreme activities.',
         weight = 200,
     },
 
     ['diving_gear'] = {
         label = 'Diving Gear',
+        description = 'Full diving equipment for underwater exploration.',
         weight = 30000,
     },
 
     ['diving_fill'] = {
         label = 'Diving Tube',
+        description = 'An air tube used to refill diving gear tanks.',
         weight = 3000,
     },
 
@@ -187,102 +185,109 @@ return {
 
     ['repairkit'] = {
         label = 'Repair Kit',
+        description = 'A basic kit for repairing vehicle damage.',
         weight = 2500,
-    },
-
-    ['advancedrepairkit'] = {
-        label = 'Advanced Repair Kit',
-        weight = 4000,
     },
 
     ['screwdriverset'] = {
         label = 'Screwdriver Set',
+        description = 'A full set of screwdrivers for all kinds of mechanical work.',
         weight = 500,
     },
 
     ['electronickit'] = {
         label = 'Electronic Kit',
+        description = 'A kit for working with electronic components and circuitry.',
         weight = 500,
     },
 
     ['cleaningkit'] = {
         label = 'Cleaning Kit',
-        weight = 500,
-    },
-
-    ['advancedlockpick'] = {
-        label = 'Advanced Lockpick',
+        description = 'A cleaning kit for maintaining tools and equipment.',
         weight = 500,
     },
 
     ['drill'] = {
         label = 'Drill',
+        description = 'A heavy-duty power drill. Good for getting through just about anything.',
         weight = 5000,
     },
 
     ['thermite'] = {
         label = 'Thermite',
+        description = 'A highly reactive compound used to burn through reinforced materials. Handle with extreme care.',
         weight = 1000,
     },
 
     ['jerry_can'] = {
         label = 'Jerrycan',
+        description = 'A portable fuel container. Useful for long drives off the beaten path.',
         weight = 3000,
     },
 
     ['nitrous'] = {
         label = 'Nitrous',
+        description = 'Nitrous oxide for a burst of speed. Use it wisely.',
         weight = 1000,
     },
 
     ['lighter'] = {
         label = 'Lighter',
+        description = 'A simple pocket lighter. Always keep one handy.',
         weight = 200,
     },
 
     ['toaster'] = {
         label = 'Toaster',
+        description = 'A household toaster. Bread goes in, toast comes out.',
         weight = 5000,
     },
 
     ['small_tv'] = {
         label = 'Small TV',
+        description = 'A small portable television. Entertainment on the go.',
         weight = 100,
     },
 
     ['walking_stick'] = {
         label = 'Walking Stick',
+        description = 'A sturdy walking stick, great for rough terrain.',
         weight = 1000,
     },
 
     ['binoculars'] = {
         label = 'Binoculars',
+        description = 'High-powered binoculars for keeping an eye on things from a distance.',
         weight = 800,
     },
 
     ['stickynote'] = {
         label = 'Sticky Note',
+        description = 'A small sticky note for leaving reminders or messages.',
         weight = 0,
     },
 
     ['paperbag'] = {
         label = 'Paper Bag',
+        description = 'A plain paper bag. Useful for carrying small items discreetly.',
         weight = 1,
         stack = false,
         close = false,
-        consume = 0
+        consume = 0,
     },
 
     ['garbage'] = {
         label = 'Garbage',
+        description = 'Just trash. Someone should really clean this up.',
+        weight = 0,
     },
 
     ['workbench'] = {
         label = 'Workbench',
+        description = 'A portable workbench for basic crafting.',
         weight = 10000,
         stack = false,
         close = true,
-        description = 'A portable workbench for basic crafting.',
         consume = 0,
         client = {
             image = 'workbench.png',
@@ -294,10 +299,10 @@ return {
 
     ['advanced_workbench'] = {
         label = 'Advanced Workbench',
+        description = 'A high-tech workbench with advanced crafting capabilities.',
         weight = 15000,
         stack = false,
         close = true,
-        description = 'A high-tech workbench with advanced crafting capabilities.',
         consume = 0,
         client = {
             image = 'advanced_workbench.png',
@@ -309,223 +314,119 @@ return {
 
 -- ── Materials ─────────────────────────────────────────────────────────────────
 
+    ['wood'] = {
+        label = 'Wood',
+        description = 'Wood from a tree. A core crafting material.',
+        weight = 100,
+    },
+
+    ['wood_planks'] = {
+        label = 'Wood Planks',
+        description = 'Refined wood, useful for flooring or other items. A core crafting material.',
+        weight = 100,
+    },
+
     ['steel'] = {
         label = 'Steel',
+        description = 'Refined steel. A core crafting material.',
         weight = 100,
     },
 
     ['rubber'] = {
         label = 'Rubber',
+        description = 'Raw rubber material. Used in various crafting recipes.',
         weight = 100,
     },
 
     ['metalscrap'] = {
         label = 'Metal Scrap',
+        description = 'Scraps of metal salvaged from various sources.',
         weight = 100,
     },
 
     ['iron'] = {
         label = 'Iron',
+        description = 'Raw iron ore. A basic crafting material.',
         weight = 100,
     },
 
     ['copper'] = {
         label = 'Copper',
+        description = 'Copper wire and fragments. Used in electronics and crafting.',
         weight = 100,
     },
 
     ['aluminum'] = {
         label = 'Aluminium',
+        description = 'Lightweight aluminium material. Useful for a variety of crafts.',
         weight = 100,
     },
 
     ['plastic'] = {
         label = 'Plastic',
+        description = 'Raw plastic pieces for use in various crafting recipes.',
         weight = 100,
     },
 
     ['glass'] = {
         label = 'Glass',
+        description = 'A piece of glass. Handle with care.',
         weight = 100,
     },
 
     ['oilbarrel'] = {
-	label = 'Oil Barrel',
-	stack = false,
-	weight = 0,
+        label = 'Oil Barrel',
+        description = 'A barrel of crude oil. Heavy and highly flammable.',
+        weight = 0,
+        stack = false,
     },
-    
+
     ['driveshaft'] = {
         label = 'Drive Shaft',
+        description = 'A vehicle drive shaft. Used in mechanical repairs.',
         weight = 1000,
-        stack = false
+        stack = false,
     },
-    
+
     ['oilfilter'] = {
         label = 'Oil Filter',
+        description = 'A vehicle oil filter. Essential for regular maintenance.',
         weight = 1000,
-        stack = false
+        stack = false,
     },
-    
+
     ['reliefstring'] = {
         label = 'Relief String',
+        description = 'A relief string used in vehicle repair work.',
         weight = 1000,
-        stack = false
+        stack = false,
     },
-    
+
     ['skewgear'] = {
         label = 'Skew Gear',
+        description = 'A precision-cut skew gear for mechanical repairs.',
         weight = 1000,
-        stack = false
+        stack = false,
     },
-    
+
     ['timingchain'] = {
         label = 'Timing Chain',
+        description = 'A vehicle timing chain. Essential for proper engine function.',
         weight = 1000,
-        stack = false
-    },
-
--- ── Drugs ─────────────────────────────────────────────────────────────────────
-
-    ['crack_baggy'] = {
-        label = 'Crack Baggy',
-        weight = 100,
-    },
-
-    ['cokebaggy'] = {
-        label = 'Bag of Coke',
-        weight = 100,
-    },
-
-    ['coke_brick'] = {
-        label = 'Coke Brick',
-        weight = 2000,
-    },
-
-    ['coke_small_brick'] = {
-        label = 'Coke Package',
-        weight = 1000,
-    },
-
-    ['xtcbaggy'] = {
-        label = 'Bag of Ecstasy',
-        weight = 100,
-    },
-
-    ['meth'] = {
-        label = 'Methamphetamine',
-        weight = 100,
-    },
-
-    ['oxy'] = {
-        label = 'Oxycodone',
-        weight = 100,
-    },
-
-    ['joint'] = {
-        label = 'Joint',
-        weight = 200,
-    },
-
-    ['rolling_paper'] = {
-        label = 'Rolling Paper',
-        weight = 0,
-    },
-
-    ['empty_weed_bag'] = {
-        label = 'Empty Weed Bag',
-        weight = 0,
-    },
-
-    ['weed_nutrition'] = {
-        label = 'Plant Fertilizer',
-        weight = 2000,
-    },
-
-    ['weed_brick'] = {
-        label = 'Weed Brick',
-        weight = 2000,
-    },
-
-    ['weed_ak47'] = {
-        label = 'AK47 2g',
-        weight = 200,
-    },
-
-    ['weed_ak47_seed'] = {
-        label = 'AK47 Seed',
-        weight = 1,
-    },
-
-    ['weed_skunk'] = {
-        label = 'Skunk 2g',
-        weight = 200,
-    },
-
-    ['weed_skunk_seed'] = {
-        label = 'Skunk Seed',
-        weight = 1,
-    },
-
-    ['weed_amnesia'] = {
-        label = 'Amnesia 2g',
-        weight = 200,
-    },
-
-    ['weed_amnesia_seed'] = {
-        label = 'Amnesia Seed',
-        weight = 1,
-    },
-
-    ['weed_og-kush'] = {
-        label = 'OGKush 2g',
-        weight = 200,
-    },
-
-    ['weed_og-kush_seed'] = {
-        label = 'OGKush Seed',
-        weight = 1,
-    },
-
-    ['weed_white-widow'] = {
-        label = 'White Widow 2g',
-        weight = 200,
-    },
-
-    ['weed_white-widow_seed'] = {
-        label = 'White Widow Seed',
-        weight = 1,
-    },
-
-    ['weed_purple-haze'] = {
-        label = 'Purple Haze 2g',
-        weight = 200,
-    },
-
-    ['weed_purple-haze_seed'] = {
-        label = 'Purple Haze Seed',
-        weight = 1,
+        stack = false,
     },
 
 -- ── Jewelry & Valuables ───────────────────────────────────────────────────────
 
-    ['diamond_ring'] = {
-        label = 'Diamond',
-        weight = 1500,
-    },
-
     ['rolex'] = {
         label = 'Golden Watch',
-        weight = 1500,
-    },
-
-    ['goldbar'] = {
-        label = 'Gold Bar',
+        description = 'A genuine golden Rolex watch. Very luxurious.',
         weight = 1500,
     },
 
     ['goldchain'] = {
         label = 'Golden Chain',
+        description = 'A thick golden chain. Flashy and expensive.',
         weight = 1500,
     },
 
@@ -533,79 +434,75 @@ return {
 
     ['gatecrack'] = {
         label = 'Gatecrack',
+        description = 'A device used to crack gate security systems.',
         weight = 1000,
     },
 
     ['cryptostick'] = {
         label = 'Crypto Stick',
+        description = 'An encrypted USB stick for transferring sensitive data.',
         weight = 100,
     },
 
     ['trojan_usb'] = {
         label = 'Trojan USB',
+        description = 'A USB loaded with malicious software. *Handle with care.*',
         weight = 100,
     },
 
     ['security_card_01'] = {
         label = 'Security Card A',
+        description = 'A level A security access card.',
         weight = 100,
     },
 
     ['security_card_02'] = {
         label = 'Security Card B',
+        description = 'A level B security access card.',
         weight = 100,
     },
 
     ['antipatharia_coral'] = {
         label = 'Antipatharia',
+        description = 'A rare deep-sea antipatharia coral specimen. Highly valuable.',
         weight = 1000,
     },
 
     ['dendrogyra_coral'] = {
         label = 'Dendrogyra',
+        description = 'A rare dendrogyra coral specimen. Highly valuable.',
         weight = 1000,
-    },
-
--- ── Police & Evidence ─────────────────────────────────────────────────────────
-
-    ['handcuffs'] = {
-        label = 'Handcuffs',
-        weight = 200,
-    },
-
-    ['empty_evidence_bag'] = {
-        label = 'Empty Evidence Bag',
-        weight = 200,
-    },
-
-    ['filled_evidence_bag'] = {
-        label = 'Filled Evidence Bag',
-        weight = 200,
     },
 
 -- ── Communication ─────────────────────────────────────────────────────────────
 
-    ["phone"] = {
-        label = "Phone",
+    ['phone'] = {
+        label = 'Phone',
+        description = 'Your personal smartphone. Stay connected in Los Santos.',
         weight = 190,
         stack = false,
-        consume = 0
+        consume = 0,
     },
-    ["phone_green"] = {
-        label = "Phone",
+
+    ['phone_green'] = {
+        label = 'Phone',
+        description = 'Your personal smartphone. Stay connected in Los Santos.',
         weight = 190,
         stack = false,
-        consume = 0
+        consume = 0,
     },
-    ["phone_orange"] = {
-        label = "Phone",
+
+    ['phone_orange'] = {
+        label = 'Phone',
+        description = 'Your personal smartphone. Stay connected in Los Santos.',
         weight = 190,
         stack = false,
-        consume = 0
+        consume = 0,
     },
 
     ['radio'] = {
         label = 'Radio',
+        description = 'A portable radio for encrypted communications. Keep it on at all times.',
         weight = 1000,
         allowArmed = true,
         consume = 0,
@@ -616,6 +513,7 @@ return {
 
     ['jammer'] = {
         label = 'Radio Jammer',
+        description = 'A device that disrupts radio communications in the surrounding area.',
         weight = 10000,
         allowArmed = true,
         client = {
@@ -625,6 +523,7 @@ return {
 
     ['radiocell'] = {
         label = 'AAA Cells',
+        description = 'AAA batteries used to recharge radio equipment.',
         weight = 1000,
         stack = true,
         allowArmed = true,
@@ -637,27 +536,27 @@ return {
 
     ['housing_key'] = {
         label = 'Property Key',
+        description = 'A key to a personal property. Keep it somewhere safe.',
         weight = 50,
         stack = false,
         close = true,
-        description = 'A key for a property lock',
         consume = 0,
     },
 
     ['key_wax'] = {
-        label = 'Key impressioning wax',
-        description = 'Use this to impression keys. Impressioning is the process of creating a copy of a key by pressing it into wax.',
+        label = 'Key Impressioning Wax',
+        description = 'Use this to take an impression of a key. Pressing the key into the wax creates a copy pattern.',
         weight = 10,
         consume = 0,
         unique = true,
-        client = {
-            image = 'key_wax.png',
-        }
+        -- client = {
+        --     image = 'key_wax.png',
+        -- }
     },
 
     ['key_wax_used'] = {
-        label = 'Used key impressioning wax',
-        description = 'Use this to impression keys. Impressioning is the process of creating a copy of a key by pressing it into wax.',
+        label = 'Used Key Impressioning Wax',
+        description = 'Wax that already has a key impression in it. Use it to get the bitting code.',
         weight = 10,
         consume = 0,
         unique = true,
@@ -669,63 +568,19 @@ return {
 
     ['furniture'] = {
         label = 'Furniture',
+        description = 'A piece of furniture from a property.',
         weight = 0,
         stack = false,
         close = true,
-        description = 'A piece of furniture from the property',
         consume = 0,
         client = {
             export = 'nolag_properties.UseFurniture',
         },
     },
 
-    ['police_stormram'] = {
-        label = 'Stormram',
-        weight = 18000,
-        stack = false,
-        close = true,
-        description = 'Tool for breaking into properties',
-        client = {
-            export = 'nolag_properties.PoliceRaidDoor',
-        }
-    },
-
-    -- wasabi_police items
-    ['bobby_pin'] = {
-        label = 'Bobby Pin',
-        weight = 2500,
-        stack = true,
-        close = true,
-        description = 'Can be used as a makeshift tool for picking locks',
-    },
-
-    ['tracking_bracelet'] = {
-        label = 'Tracking Bracelet',
-        weight = 2500,
-        stack = false,
-        close = true,
-        description = 'Can be used for tracking a suspect',
-    },
-
-    -- snipe-evidence items
-    ['accesstool'] = {
-        label = 'Access Tool',
-        weight = 500,
-        stack = false,
-        close = true,
-        description = 'Used to access a vehicle',
-    },
-
-    ['evidence_tweezers'] = {
-        label = 'Evidence Tweezers',
-        weight = 200,
-        stack = true,
-        close = true,
-        description = 'Used to collect evidence from a crime scene',
-    },
-
     ['lockpick'] = {
         label = 'Lockpick',
+        description = 'A standard lockpick for getting past basic property locks.',
         weight = 160,
         client = {
             export = 'nolag_properties.UseLockpick',
@@ -736,34 +591,25 @@ return {
 
     ['firework1'] = {
         label = '2Brothers',
+        description = 'A 2Brothers firework. Light it up and enjoy the show!',
         weight = 1000,
     },
 
     ['firework2'] = {
         label = 'Poppelers',
+        description = 'A Poppelers firework. Light it up and enjoy the show!',
         weight = 1000,
     },
 
     ['firework3'] = {
         label = 'WipeOut',
+        description = 'A WipeOut firework. Light it up and enjoy the show!',
         weight = 1000,
     },
 
     ['firework4'] = {
         label = 'Weeping Willow',
+        description = 'A Weeping Willow firework. Light it up and enjoy the show!',
         weight = 1000,
     },
-
-    ['panties'] = {
-        label = 'Knickers',
-        weight = 10,
-        consume = 0,
-        client = {
-            status = { thirst = -100000, stress = -25000 },
-            anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
-            prop = { model = `prop_cs_panties_02`, pos = vec3(0.03, 0.0, 0.02), rot = vec3(0.0, -13.5, -1.5) },
-            usetime = 2500,
-        }
-    },
-
 }
