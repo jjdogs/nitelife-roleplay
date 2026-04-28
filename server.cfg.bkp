@@ -52,6 +52,9 @@ exec loadscreen.cfg
 # ── Weather ───────────────────────────────────────────────────────────────────
 setr weather_disablecd true
 
+add_ace resource.leap fs.write allow
+add_ace resource.leap command.refresh allow
+
 # ── Resources ─────────────────────────────────────────────────────────────────
 ensure mapmanager
 ensure chat
@@ -62,12 +65,14 @@ ensure hardcap
 ensure baseevents
 # ensure rconlog
 
+ensure leap
 ensure lation_ui
 ensure ox_lib
 ensure qbx_core
 ensure ox_target
 ensure [ox]
 ensure [sd]
+ensure [utility_lib]
 ensure nt_sqloptimizer
 ensure [fuel]
 ensure [qbx]
@@ -90,7 +95,7 @@ ensure lb-phone
 ensure [phone]
 ensure [nt]
 ensure [pug]
-ensure [okok]
+ensure [laptop]
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 add_principal identifier.fivem:7140163 group.admin # JJ

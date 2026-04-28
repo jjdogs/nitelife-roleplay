@@ -1,0 +1,574 @@
+-- v1.5
+local tag = "^3ObjectManagement^0"
+local modelScripts = {}
+local objectScripts = {}
+local registeredObjects = {}
+local tempObjectsProperties = {} -- Used to store temporary object properties for later instantiation
+local customHooks = {}
+
+local function GetScriptsForModel(model)
+    return modelScripts[model]
+end
+
+local function _IsObjectScriptRegistered(model, name)
+    local scripts = GetScriptsForModel(model)
+    if scripts then
+        for k,v in ipairs(scripts) do
+            if v.name == name then
+                return true
+            end
+        end
+    end
+end
+
+-- Temp objects instances can interact only with tempObjectsProperties, not real instance runtime changed properties
+-- Real objects instances can interact also with tempObjectsProperties
+local function CreateTempObjectAndCallMethod(uNetId, model, method, ...)
+    local _model = type(model) == "string" and GetHashKey(model) or model
+    local scripts = GetScriptsForModel(_model)
+    
+    local _self = nil
+    local _oldNewIndex = nil
+
+    if not scripts then
+        return
+    end
+    
+    for k,v in pairs(scripts) do
+        if v.script.__prototype[method] then
+            if not _self then
+                _self = new v.script()
+                _self.state = UtilityNet.State(uNetId)
+                _self.id = uNetId
+
+                -- Set all temp object properties to new temp instance 
+                -- (so that things done in OnRegister can be reused also in OnUnregister)
+                -- This is done voluntarily like this to dont allow to access real instance properties and prevent strange bugs 
+                -- (when unregistering a rendered object or unrendered the OnUnregister will be called with different objects creating strange situational bugs)
+                if tempObjectsProperties[uNetId] then
+                    for k,v in pairs(tempObjectsProperties[uNetId]) do
+                        _self[k] = v
+                    end
+                end
+
+                local metatable = getmetatable(_self)
+                _oldNewIndex = metatable.__newindex
+
+                metatable.__newindex = function(self, key, value)
+                    -- We store all object properties in a temp table to set them later on object instantiation/OnUnregister
+                    if not tempObjectsProperties[uNetId] then
+                        tempObjectsProperties[uNetId] = {}
+                    end
+
+                    tempObjectsProperties[uNetId][key] = value
+                    rawset(self, key, value)
+                end
+            end
+
+            _self[method](_self, ...)
+        end
+    end
+
+    if _self then -- Reset metatable to default!
+        local metatable = getmetatable(_self)
+        metatable.__newindex = _oldNewIndex
+    end
+end
+
+local function CallOnRegister(uNetId, model, coords, rotation)
+    registeredObjects[uNetId] = promise.new()
+    CreateTempObjectAndCallMethod(uNetId, model, "OnRegister", coords, rotation)
+    registeredObjects[uNetId]:resolve(true)
+end
+
+local function CreateObjectScriptInstance(obj, scriptIndex, source)
+    local model = nil
+    local uNetId = nil
+    local scripts = nil
+
+    if type(obj) == "table" then
+        model = obj.model
+        uNetId = obj.netId
+        scripts = obj.scripts
+        obj = obj.obj
+    else
+        model = GetEntityModel(obj)
+        uNetId = UtilityNet.GetUNetIdFromEntity(obj)
+        scripts = GetScriptsForModel(model)
+    end
+
+
+    if not scripts then
+        developer(tag, "Model ^4"..model.."^0 has no scripts, skipping script index "..scriptIndex)
+        return
+    end
+
+    local script = scripts[scriptIndex]
+    
+    -- Script already registered, skipping
+    if objectScripts[obj][script.name] then
+        developer("^1ObjectManagement^0", "Skipping ^1"..GetEntityArchetypeName(obj).."^0 since is already registered > ^5"..script.name.."^0 for "..obj)
+        return
+    end
+
+    if source == "Registered" and Config?.ObjectManagementDebug?.Registered then
+        developer(tag .. " ^2Registered^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    elseif source == "GetInstance" and Config?.ObjectManagementDebug?.GetInstance then
+        developer(tag .. " ^3GetInstance^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    elseif source == "CreateInstances" and Config?.ObjectManagementDebug?.CreateInstances then
+        developer(tag .. " ^6CreateInstances^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    end
+
+    -- This "mechanism" is similar to the server side, where is a little cleaner
+
+    if script.name ~= "main" then
+        -- We need to set it in the prototype since the rpc decorator is called before full object initialization
+        script.script.__prototype.isPlugin = true
+        script.script.__prototype.main = objectScripts[obj]["main"]
+    end
+
+    local instance = new script.script()
+
+    instance.state = UtilityNet.State(uNetId)
+    instance.id = uNetId
+    instance.obj = obj
+
+    if script.name ~= "main" then
+        local main = objectScripts[obj]["main"]
+
+        -- Reset prototype for future object instantiations
+        script.script.__prototype.isPlugin = nil
+        script.script.__prototype.main = nil
+
+        -- Reset the values on this object instance
+        instance.isPlugin = true
+        instance.main = main
+
+        main.plugins[script.name] = instance -- Register plugin in main instance
+    end
+
+    -- On object instantiation set all temp object properties to real instance (saves a lot of memory)
+    if tempObjectsProperties[uNetId] then
+        for k,v in pairs(tempObjectsProperties[uNetId]) do
+            instance[k] = v
+        end
+    end
+
+    -- Call all hooks .exec method
+    for hookMethod, hook in pairs(customHooks) do
+        if instance[hookMethod] and hook.exec then
+            hook.exec(instance, name)
+        end
+    end
+
+    -- Register script instance on object
+    objectScripts[obj][script.name] = instance
+
+    return instance
+end
+
+local function CreateObjectScriptsInstances(objInfo)
+    if not objInfo.scripts then
+        developer(tag, "Model ^4"..objInfo.model.."^0 has no scripts, skipping scripts instances creation")
+        return false
+    end
+    
+    objectScripts[objInfo.obj] = {}
+
+    local model_name = GetEntityArchetypeName(objInfo.obj)
+
+    -- Create main script before possible plugins
+    local main = CreateObjectScriptInstance(objInfo, 1, "GetInstance")
+    main.plugins = {} -- Allow plugins to register themself
+    main.model = model_name
+
+    objectScripts[objInfo.obj]["main"] = main
+
+    -- Create script instances in registration order (only plugins)
+    for k,v in ipairs(objInfo.scripts) do
+        if v.name ~= "main" then
+            objectScripts[objInfo.obj][v.name] = CreateObjectScriptInstance(objInfo, k, "CreateInstances")
+            objectScripts[objInfo.obj][v.name].model = model_name
+        end
+    end
+
+    return true
+end
+
+function CallMethodForAllObjectScripts(obj, method, ...)
+    local model = nil
+    local scripts = nil
+    
+    if type(obj) == "table" then
+        model = obj.model
+        scripts = obj.scripts
+        obj = obj.obj
+    else
+        model = Entity(obj).state.model
+        scripts = GetScriptsForModel(model)
+    end
+
+
+    if not scripts then
+        developer(tag, "Model ^4"..tostring(model).."^0 has no scripts, ignoring call method "..method)
+        return
+    end
+
+    for k,v in ipairs(scripts) do
+        if not DoesEntityExist(obj) then -- Object was deleted in the meantime
+            break
+        end
+
+        local instance = GetObjectScriptInstance(obj, v.name, true)
+        
+        if not instance then -- Instance was deleted in the meantime
+            break
+        end
+        
+        if instance[method] then
+            instance[method](instance, ...)
+        end
+        
+        -- Propagate events also for custom hooks
+        for hookMethod, hook in pairs(customHooks) do
+            -- If this script instance and the hook implements the method
+            if instance[hookMethod] and hook[method] then
+                -- Temporarily create the call function to call the original method
+                local call = function(...) 
+                    CallMethodForAllObjectScripts(instance.obj, hookMethod, ...)
+                end
+
+                hook[method](instance, call, ...)
+            end
+        end
+    end
+end
+
+--#region External API
+function RegisterObjectScript(model, name, script)
+    local hashmodel = type(model) == "string" and GetHashKey(model) or model
+
+    if not modelScripts[hashmodel] then
+        modelScripts[hashmodel] = {}
+    end
+
+    if not script then
+        error("RegisterObjectScript: tried to register "..model.." > "..name.." but script is empty")
+    end
+
+    if IsObjectScriptRegistered(hashmodel, name) then
+        developer(tag, "Model ^4"..model.."^0 > ^5"..name.."^0 is already registered, skipping")
+        return
+    end
+    
+    if name == "main" then
+        table.insert(modelScripts[hashmodel], 1, {
+            script = script,
+            name = name
+        })
+    else
+        table.insert(modelScripts[hashmodel], {
+            script = script,
+            name = name
+        })
+    end
+
+    -- Register script for already spawned objects
+    local scriptIndex = #modelScripts[hashmodel]
+
+    if not table.empty(objectScripts) then
+        for obj, scripts in pairs(objectScripts) do
+            local model = GetEntityModel(obj)
+
+            -- Same model and script is not already registered
+            if model == hashmodel and not objectScripts[obj][name] then
+                objectScripts[obj][name] = CreateObjectScriptInstance(obj, scriptIndex, "Registered")
+            end
+        end
+    end
+end
+
+function RegisterObjectsScript(models, name, script)
+    for k,v in pairs(models) do
+        RegisterObjectScript(v, name, script)
+    end
+end
+
+function IsObjectScriptRegistered(model, name)
+    local hashmodel = type(model) == "string" and GetHashKey(model) or model
+
+    return _IsObjectScriptRegistered(hashmodel, name)
+end
+
+---@class Hook
+---@field exec function Called when any script object is created
+---@field OnSpawn fun(self, call:function) Called when a script instance is created
+---@field AfterSpawn fun(self, call:function) Called after a script instance is created
+---@field OnDespawn fun(self, call:function) Called when a script instance is despawned
+
+---Register a custom hook (works like a custom method)
+---@param hookMethod string The name of the method for using the hook
+---@param hookData Hook The table includes the following default methods: `exec`, `OnSpawn`, `AfterSpawn`, `OnDespawn`. Additionally, a function parameter `call` is added to call the original method in all script instances.
+function RegisterCustomHook(hookMethod, hookData)
+    customHooks[hookMethod] = hookData
+end
+
+---Pass a script as "static", no instance is created, the script will be returned as it is (table)  
+---Not safe to edit the "static" script or calling functions without providing a custom "instance" mockup
+---@param model string
+---@param name string The script name
+function GetExternalObjectScriptStatic(model, name)
+    if type(model) == "string" then
+        model = GetHashKey(model)
+    end
+    
+    if not modelScripts[model] then return end
+
+    for k,v in pairs(modelScripts[model]) do
+        if v.name == name then
+            return v.script
+        end
+    end
+end
+
+function GetObjectScriptInstance(obj, name, nocheck)
+    if not obj then error("GetObjectScriptInstance: passed obj is nil, name: "..name) end
+    
+    if not nocheck then
+        if not UtilityNet.GetUNetIdFromEntity(obj) then return end -- Object is not networked
+
+        -- Wait that the object is rendered
+        local start = GetGameTimer()
+        while not UtilityNet.IsEntityRendered(obj) do
+            if GetGameTimer() - start > 5000 then
+                error("GetObjectScriptInstance: UtilityNet.IsEntityRendered timed out for "..GetEntityArchetypeName(obj).." > "..name, 2)
+            end
+            Citizen.Wait(0)
+        end
+    end
+
+    
+    if not objectScripts[obj] then
+        local model = GetEntityModel(obj)
+        -- Check if script should be loaded
+        if _IsObjectScriptRegistered(model, name) then
+            -- Wait for script to be loaded
+            local start = GetGameTimer()
+            while not objectScripts[obj] or not objectScripts[obj][name] do
+                if GetGameTimer() - start > 5000 then
+                    error("GetObjectScriptInstance: timed out for "..GetEntityArchetypeName(obj).." > "..name, 2)
+                end
+                Citizen.Wait(0)
+            end
+        else -- Script is not registered and will not be loaded in the future (dont exist)
+            return nil 
+        end
+    end
+
+    if not objectScripts[obj][name] then
+        local model = GetEntityModel(obj)
+        local scripts = GetScriptsForModel(model)
+        local scriptIndex = nil
+
+        for k,v in ipairs(scripts) do
+            if v.name == name then
+                scriptIndex = k
+                break
+            end
+        end
+
+        if not scriptIndex then
+            return
+        end
+
+        CreateObjectScriptInstance(obj, scriptIndex, "GetInstance")
+    end
+
+    return objectScripts[obj][name]
+end
+
+function GetNetScriptInstance(netid, name)
+    if not netid then error("GetNetScriptInstance: passed netid is nil", 2) return end
+
+    local start = GetGameTimer()
+    while not UtilityNet.IsReady(netid) do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out IsReady for netid "..tostring(netid), 2)
+        end
+        Citizen.Wait(0)
+    end
+
+    local obj = UtilityNet.GetEntityFromUNetId(netid)
+
+    local start = GetGameTimer()
+    while not UtilityNet.IsEntityRendered(obj) do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out IsEntityRendered for netid "..tostring(netid)..", obj "..tostring(obj), 2)
+        end
+        Citizen.Wait(0)
+    end
+
+    local model = GetEntityModel(obj)
+    if not IsObjectScriptRegistered(model, name) then
+        return nil
+    end
+
+    local start = GetGameTimer()
+    while not Entity(obj).state.om_scripts_created do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out, not all scripts created after 5s for netid "..tostring(netid)..", obj "..tostring(obj), 2)
+        end
+
+        warn(obj..' waiting for all scripts to be created')
+        Citizen.Wait(0)
+    end
+
+    return GetObjectScriptInstance(obj, name)
+end
+
+function AreObjectScriptsFullyLoaded(obj)
+    if not DoesEntityExist(obj) then
+        warn("AreObjectScriptsFullyLoaded: object "..tostring(obj).." doesn't exist, skipping")
+        return false
+    end
+
+    local entity = Entity(obj)
+    if entity and entity.state and entity.state.om_loaded then
+        return true
+    end
+
+    return false
+end
+--#endregion
+
+RegisterCustomHook("OnStateChange", {
+    OnSpawn = function(env, call)
+        env.changeHandler = UtilityNet.AddStateBagChangeHandler(env.id, function(key, value)
+            call(key, value)
+        end)
+    end,
+    OnDestroy = function(env)
+        UtilityNet.RemoveStateBagChangeHandler(env.changeHandler)
+    end
+})
+
+if not UtilityNet then
+    error("Please load the utility_lib before utility_objectify!")
+end
+
+local resource = GetCurrentResourceName()
+UtilityNet.OnRender(function(id, obj, model)
+    if UtilityNet.GetuNetIdCreator(id) ~= resource then
+        return
+    end
+
+    if objectScripts[obj] then
+        warn("Skipping render of "..id.." since it already has some registered scripts")
+        return
+    end
+
+    if not registeredObjects[id] then
+        CallOnRegister(id, model, GetEntityCoords(obj), GetEntityRotation(obj))
+    else
+        Citizen.Await(registeredObjects[id])
+    end
+
+
+    local model = GetEntityModel(obj)
+
+    local objInfo = {
+        obj = obj,
+        netId = id,
+        model = model,
+        scripts = GetScriptsForModel(model)
+    }
+
+    local created = CreateObjectScriptsInstances(objInfo)
+
+    if not created then
+        return
+    end
+
+    Entity(obj).state:set("om_scripts_created", true, false)
+    Entity(obj).state:set("model", model, false) -- Preserve original model to fetch scripts (since can be replace with CreateModelSwap)
+
+    UtilityNet.PreserveEntity(id)
+
+    CallMethodForAllObjectScripts(objInfo, "OnAwake")
+    CallMethodForAllObjectScripts(objInfo, "OnSpawn")
+    CallMethodForAllObjectScripts(objInfo, "AfterSpawn")
+    
+    -- During the different calls the entity could have been deleted
+    if DoesEntityExist(obj) then
+        -- Used for tracking object loading state
+        Entity(obj).state:set("om_loaded", true, false)
+    end
+end)
+
+UtilityNet.OnUnrender(function(id, obj, model)
+    if not objectScripts[obj] then
+        return
+    end
+
+    CallMethodForAllObjectScripts(obj, "OnDestroy")
+    objectScripts[obj] = nil
+
+    if Config?.ObjectManagementDebug?.Deleting then
+        developer(tag, "Deleting ^4"..GetEntityArchetypeName(obj).."^0 instances")
+    end
+
+    DeleteEntity(obj)
+end)
+
+RegisterNetEvent("Utility:Net:EntityCreated", function(_, object)
+    if registeredObjects[object.id] then
+        return
+    end
+
+    rotation = object?.options?.rotation or vec3(0, 0, 0)
+    CallOnRegister(object.id, object.model, object.coords, rotation)
+end)
+
+RegisterNetEvent("Utility:Net:RequestDeletion", function(uNetId, model, coords, rotation)
+    rotation = rotation or vec3(0, 0, 0)
+
+    registeredObjects[uNetId] = nil
+    CreateTempObjectAndCallMethod(uNetId, model, "OnUnregister", coords, rotation)
+    tempObjectsProperties[uNetId] = nil -- Clear all temp properties on deletion (always)
+end)
+
+Citizen.CreateThread(function()
+    local entities = UtilityNet.GetServerEntities({
+        where = {createdBy = resource},
+        select = {"id", "model", "coords", "options"}
+    })
+
+    for _, entity in pairs(entities) do
+        if not registeredObjects[entity.id] then
+            CallOnRegister(entity.id, entity.model, entity.coords, entity.options.rotation)
+        end
+    end
+end)
+
+--#region Debug
+Citizen.CreateThread(function()
+    if DevModeStatus then
+        while true do
+            local found, entity = GetEntityPlayerIsFreeAimingAt(PlayerId())
+
+            if found and objectScripts[entity] then
+                local coords = GetEntityCoords(entity)
+                local text = "INSTANCES:"
+
+                for name, instance in pairs(objectScripts[entity]) do
+                    text = text .. "\n"..name.." : "..tostring(instance)
+                end
+
+                DrawText3Ds(coords, text)
+            end
+            
+            Citizen.Wait(1)
+        end
+    end
+end)
+--#endregion

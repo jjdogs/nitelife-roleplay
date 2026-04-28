@@ -369,4 +369,75 @@ end
 
 -----------------------------------------------------------------------------------------------
 
+local consumeTypes = {
+	['drink'] = 0.25, -- 4 "Sips"
+	['food'] = 0.15, -- 6 "bites"
+	['alcohol'] = 0.25, -- 4 "Sips"
+	['joint'] = 0.10, -- 10 "Hits"
+}
+
+local degradeTypes = {
+	['drink'] = false,
+	['food'] = false,
+	['alcohol'] = false,
+	['joint'] = false,
+}
+
+AddEventHandler('inventory:refresh',function()
+	local success, items = pcall(MySQL.query.await, 'SELECT * FROM av_items')
+	if success and items and next(items) then
+		local resource = GetCurrentResourceName()
+		local path = GetResourcePath(resource)
+		local dump = {}
+		for i = 1, #items do
+			local item = items[i]
+			if not ItemList[item.name] then
+				item.close = true
+				item.stack = not (consumeTypes[item.type] and consumeTypes[item.type] > 0)
+				item.description = item.description
+				item.weight = item.weight or 1000
+				item.consume = consumeTypes[item.type] or false
+				item.degrade = degradeTypes[item.type] or false
+				dump[i] = item
+				if item.image then
+					PerformHttpRequest(item.image, function (errorCode, resultData, resultHeaders)
+						if errorCode >= 200 and errorCode < 300 then
+							local image = assert(io.open(path..'/web/images/'..item.name..'.png', "wb"))
+							image:write(resultData)
+							image:flush()
+							image:close()
+						end
+					end)
+				end
+			end
+		end
+		if table.type(dump) ~= "empty" then
+			local file = {string.strtrim(LoadResourceFile(shared.resource, 'data/items.lua'))}
+			file[1] = file[1]:gsub('}$', '')
+			local itemFormat = [[
+	['%s'] = {
+		label = '%s',
+		weight = %s,
+		consume = %s,
+		degrade = %s,
+		stack = %s,
+		close = %s,
+		description = %s
+	},
+]]
+			local fileSize = #file
+			for _, item in pairs(dump) do
+				local formatName = item.name:gsub("'", "\\'"):lower()
+				if not ItemList[formatName] then
+					fileSize += 1
+					file[fileSize] = (itemFormat):format(formatName, item.label:gsub("'", "\\'"), item.weight, item.consume, item.degrade, item.stack, item.close, item.description and ('"%s"'):format(item.description) or 'nil')
+					ItemList[formatName] = item
+				end
+			end
+			file[fileSize+1] = '}'
+			SaveResourceFile(shared.resource, 'data/items.lua', table.concat(file), -1)
+		end
+	end
+end)
+
 return Items

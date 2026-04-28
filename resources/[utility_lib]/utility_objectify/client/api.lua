@@ -1,0 +1,1423 @@
+--BUILD @utility_objectify/shared/decorators.lua
+function model(_class, model, abstract)
+    if type(model) == "table" then
+        for k,v in pairs(model) do
+            if IsClient then
+                RegisterObjectScript(v, "main", _class)
+            elseif IsServer then
+                _class.__prototype[v] = function(...)
+                    _class.__prototype.model = v
+                    _class.__prototype.abstract = abstract
+
+                    local obj = new _class(...)
+                    obj.model = v
+                    _class.__prototype.model = nil
+
+                    return obj
+                end
+            end
+        end
+
+        _class.__models = model
+    elseif type(model) == "string" then
+        _class.__prototype.model = model
+
+        if IsClient then
+            RegisterObjectScript(model, "main", _class)
+        elseif IsServer then
+            _class.__prototype.abstract = abstract
+        end
+    end
+end
+
+function plugin(_class, plugin)
+    if IsClient then
+        Citizen.CreateThread(function()
+            if _G[plugin].__prototype.OnPluginApply then
+                _G[plugin].__prototype.OnPluginApply({}, _class.__prototype)
+            end
+
+            if _class.__models then
+                for _,model in pairs(_class.__models) do
+                    RegisterObjectScript(model, plugin, _G[plugin])
+                end
+            else
+                local model = _class.__prototype.model
+                RegisterObjectScript(model, plugin, _G[plugin])
+            end
+        end)
+    elseif IsServer then
+        if not _class.__prototype.__plugins then
+            _class.__prototype.__plugins = {}
+        end
+
+        table.insert(_class.__prototype.__plugins, plugin)
+    end
+end
+
+local function registerOneSyncEntity(_class, _type, _model)
+    if type(_model) == "table" then
+        for k,v in pairs(_model) do
+            _model[k] = "UtilityNet:".._type..":"..v
+        end
+
+        model(_class, _model, true)
+    else
+        model(_class, "UtilityNet:".._type..":".._model, true)
+    end
+end
+
+function vehicle(_class, _model)
+    registerOneSyncEntity(_class, "Veh", _model)
+end
+
+function ped(_class, _model)
+    registerOneSyncEntity(_class, "Ped", _model)
+end
+
+function object(_class, _model)
+    registerOneSyncEntity(_class, "Obj", _model)
+end
+
+function state(self, fn, key, value)
+    if not self.listenedStates then
+        self.listenedStates = {}
+    end
+
+    if not self.listenedStates[key] then
+        self.listenedStates[key] = {}
+    end
+
+    table.insert(self.listenedStates[key], {
+        fn = fn,
+        value = value
+    })
+end
+
+function event(self, fn, key, ignoreRendering)
+    RegisterNetEvent(key)
+    AddEventHandler(key, function(...)
+        if IsClient then
+            if ignoreRendering then
+                fn(...)
+            else
+                if AreObjectScriptsFullyLoaded(self.obj) then -- Only run if object is loaded
+                    fn(...)
+                end
+            end
+        elseif IsServer then
+            fn(...)
+        end
+    end)
+end
+
+------------------------------------
+
+--BUILD @utility_objectify/shared/entitiesSingleton.lua
+-- v1.1
+class EntitiesSingleton {
+    list = {},
+
+    constructor = function()
+        self.list = {}
+    end,
+
+    add = function(entity: BaseEntity)
+        self.list[entity.id] = entity
+    end,
+
+    createByName = function(name: string)
+        return _G[name]()
+    end,
+
+    remove = function(entity: BaseEntity)
+        self.list[entity.id] = nil
+    end,
+
+    get = function(id: number)
+        return self.list[id]
+    end,
+
+    waitFor = function(caller: BaseEntity, id: number, timeout: number = 5000)
+        local start = GetGameTimer()
+
+        while not self.list[id] and DoesEntityExist(caller.obj) do
+            if GetGameTimer() - start > timeout then
+                throw new Error("${type(self)}: Entity ${tostring(id)} not found after ${timeout}ms, skipping")
+                return nil
+            end
+
+            Wait(0)
+        end
+
+        if not DoesEntityExist(caller.obj) then
+            return
+        end
+
+        return self.list[id]
+    end,
+
+    getBy = function(key: string, value)
+        for _, entity in pairs(self.list) do
+            if type(value) == "function" then
+                if value(entity[key]) then
+                    return entity
+                end
+            else
+                if entity[key] == value then
+                    return entity
+                end
+            end
+        end
+    end,
+
+    getAllBy = function(key: string, value)
+        local ret = {}
+
+        for k,v in pairs(self.list) do
+            if type(value) == "function" then
+                if value(v[key]) then
+                    table.insert(ret, v)
+                end
+            else
+                if v[key] == value then
+                    table.insert(ret, v)
+                end
+            end
+        end
+
+        return ret
+    end
+}
+
+Entities = new EntitiesSingleton()
+
+------------------------------------
+
+--BUILD @utility_objectify/shared/rpc.lua
+local exposedEntitiesRpcs = {} -- Used to store all class exposed rpcs
+local callbacks = {}
+local namespace = (Config?.Namespace or GetCurrentResourceName()) .. ":"
+
+function SetRPCNamespace(_namespace)
+    namespace = _namespace
+end
+
+if not IsDuplicityVersion() then
+    callbacks["GetCallbacks"] = true
+end
+
+local function rpc_hasreturn(fn, _return)
+    local sig = leap.fsignature(fn)
+    return _return != nil ? _return : sig.has_return
+end
+
+local function rpc_function(fn, _return)
+    local sig = leap.fsignature(fn)
+    _return = rpc_hasreturn(fn, _return)
+    local tag = IsServer and "Server" or "Client"
+
+    local name = namespace.."${tag}:"..sig.name
+
+    if not _return then
+        RegisterNetEvent(name)
+
+        if IsServer then
+            AddEventHandler(name, fn)
+        else
+            AddEventHandler(name, function(...)
+                local first = ...
+                if type(first) == "string" and first:sub(1, 2) == "cb" then
+                    error("${sig.name}: You cannot call a standard rpc as a callback, please dont use `await`")
+                end
+                
+                fn(...)
+            end)
+        end
+    else
+        callbacks[sig.name] = true
+
+        RegisterNetEvent(name)
+        AddEventHandler(name, function(id, ...)
+            if IsClient then
+                if type(id) != "string" or id:sub(1, 2) != "cb" then
+                    error("${sig.name}: You cannot call a callback as a standard rpc, please use `await`")
+                end
+            end
+
+            local source = source
+            
+            -- For make the return of lua works
+            local _cb = table.pack(fn(...))
+            
+            if _cb ~= nil then -- If the callback is not nil
+                if IsServer then
+                    TriggerClientEvent(name, source, id, _cb) -- Trigger the client event
+                else
+                    TriggerServerEvent(name, id, _cb) -- Trigger the server event
+                end
+            end
+        end)
+    end
+end
+
+local function checkRPCExposure(ogname, source, classLabel, methodName)
+    if not exposedEntitiesRpcs[classLabel] or not exposedEntitiesRpcs[classLabel][methodName] then
+        error("${ogname}(${source}): Class ${classLabel} doesn't expose ${methodName}")
+        return false
+    end
+
+    return true
+end
+
+local function callRPC(target, method, ...)
+    return target[method](target, ...)
+end
+
+local function rpc_entity(className, fn, _return)
+    local sig = leap.fsignature(fn)
+    local ogname = sig.name
+    sig.name =  className.."."..sig.name
+    
+    --[[
+    -- This function is used as a "global" function to expose a rpc to the other side for a specific class
+    -- The other side will pass as first argument the id of the entity and it will call the function in the object class
+    -- Example:
+    --   class Test extends BaseEntity {
+    --       @rpc()
+    --       test = function(a)
+    --           print("from client/server:", a)
+    --       end
+    --   }
+    --
+    --   When the other side calls the rpc this is the call stack:
+    --    other side: send call to Test.test (className:fn) passing as first argument the uNetId of the entity
+    --    this side: call a global function that will resolve the entity from the uNetId and call the appropriate function
+    --]]
+    local _fn = leap.registerfunc(function(id, ...)
+        local source = source or "SERVER"
+        local entity = Entities:getBy("id", id)
+        local tag = "${ogname}(${source})"
+
+        if not entity then
+            error("${tag}: Entity with id ${tostring(id)} does not exist")
+            return
+        end
+
+        local isPlugin = className:find("%.")
+        if isPlugin then -- RPC from a plugin
+            local _className, pluginName = className:match("(.*)%.(.*)")
+
+            if not entity.plugins or not entity.plugins[pluginName] then
+                error("${tag}: Entity with id ${tostring(id)} has no plugin ${pluginName}")
+                return
+            end
+
+            if type(entity) ~= _className then
+                error("${tag}: Entity with id ${tostring(id)} is not a ${className}")
+                return
+            end
+
+            local plugin = entity.plugins[pluginName]
+            if not plugin[ogname] then
+                error("${tag}: Class ${className} doesnt define ${ogname}")
+                return
+            end
+
+            if checkRPCExposure(ogname, source, className, ogname) then
+                return callRPC(plugin, ogname, ...)
+            end
+        else
+            if type(entity) ~= className then
+                error("${tag}: Entity with id ${tostring(id)} is not a ${className}")
+                return
+            end
+
+            if not entity[ogname] then
+                error("${tag}: Class ${className} doesnt define ${ogname}")
+                return
+            end
+
+            if checkRPCExposure(ogname, source, className, ogname) then
+                return callRPC(entity, ogname, ...)
+            end
+        end
+    end, sig)
+
+    rpc_function(_fn, _return)
+
+    if IsServer then
+        if rpc_hasreturn(fn, _return) then
+            TriggerClientEvent(namespace.."RegisterCallback", -1, sig.name) -- Register the callback on runtime for connected clients!
+        end
+    end
+
+    sig.name = ogname
+end
+
+function rpc(fn, _return, c)
+    if _type(fn) == "function" then
+        rpc_function(fn, _return)
+    else
+        local class = fn
+        local fn = _return
+        local _return = c
+        
+        if not class is BaseEntity then
+            error("The rpc decorator on classes is only allowed to be used on classes that inherit from BaseEntity")
+        end
+
+        local sig = leap.fsignature(fn)
+
+        local className = nil
+
+        if class.isPlugin then
+            className = type(class.main) .. "." .. type(class)
+        else
+            className = type(class)
+        end
+        
+        if not exposedEntitiesRpcs[className] then
+            exposedEntitiesRpcs[className] = {}
+        end
+
+        if not exposedEntitiesRpcs[className][sig.name] then
+            exposedEntitiesRpcs[className][sig.name] = true -- Set the rpc as exposed
+
+            -- Register global function that will handle "entity branching"
+            rpc_entity(className, fn, _return)
+        end
+    end
+end
+
+function srpc(fn, _return, c)
+    if IsServer then
+        rpc(fn, _return, c)
+    end
+end
+
+function crpc(fn, _return, c)
+    if IsClient then
+        rpc(fn, _return, c)
+    end
+end
+
+------------------------------------
+
+--BUILD @utility_objectify/client/framework.lua
+-- v1.2
+IsServer = false
+IsClient = true
+
+local callbacksLoaded = false
+
+local function CombineHooks(self, methodName, beforeName, afterName)
+    local main = self[methodName]
+
+    self[methodName] = function(...)
+        local before = self[beforeName]
+        local after = self[afterName]
+        
+        if DoesEntityExist(self.obj) and before then before(self, ...) end
+        if DoesEntityExist(self.obj) and main then main(self, ...) end
+        if DoesEntityExist(self.obj) and after then return after(self, ...) end
+    end
+end
+
+local server_rpc_mt, server_plugin_rpc_mt, children_mt = nil -- hoisting
+server_rpc_mt = {
+    __index = function(self, key)
+        -- Create "plugins" at runtime, this reduce memory footprint
+        if key == "plugins" then
+            local id = rawget(self, "id")
+            local __type = rawget(self, "__type")
+
+            local plugins = setmetatable({id = id, __type = __type}, server_plugin_rpc_mt)
+            rawset(self, "plugins", plugins) -- Caching
+            return plugins
+        end
+
+        local method = self.__type .. "." .. key
+
+        local fn = function(...)
+            local first = ... -- This will just assign the first argument
+            local selfCall = first and type(first) == self.__type and first.id == self.id
+
+            if selfCall then
+                return Server[method](self.id, select(2, ...))
+            else
+                return Server[method](self.id, ...)
+            end
+        end
+
+        rawset(self, key, fn) -- Caching
+        return fn
+    end,
+    __newindex = function(self, key, value)
+        error("You can't register server methods from the client, please register them from the server using the rpc decorator!")
+    end
+}
+
+server_plugin_rpc_mt = {
+    __index = function(self, key)
+        -- Create a client_rpc_mt with the plugin name and add the plugin type
+        local proxy = setmetatable({
+            id = self.id,
+            __type = self.__type .. "." .. key
+        }, server_rpc_mt)
+
+        rawset(self, key, proxy) -- Caching
+        return proxy
+    end,
+
+    __newindex = function()
+        error("You can't register server methods from the client, please register them from the server using the rpc decorator!")
+    end
+}
+
+children_mt = {
+    __mode = "v",
+
+    getEntity = function(self, name)
+        if not self._state.children then
+            return nil
+        end
+
+        if not self._state.children[name] then
+            return nil
+        end
+
+        local entity = Entities:waitFor(self, self._state.children[name])
+        entity.parent = self._parent
+
+        return entity
+    end,
+
+    __pairs = function(self)
+        if not self._state.children then
+            return function() end
+        end
+
+        local meta = getmetatable(self)
+
+        return function(t, k)
+            local k,v = next(self._state.children, k)
+            if not v or not k then return nil end
+
+            local entity = meta.getEntity(self, k)
+
+            if entity then
+                return k, entity
+            end
+        end
+    end,
+
+    __tostring = function(self)
+        if not self._state.children then
+            return "[]"
+        end
+
+        return json.encode(self._state.children)
+    end,
+
+    __ipairs = function(self)
+        local meta = getmetatable(self)
+        return meta.__pairs(self)
+    end,
+
+    __len = function(self)
+        if not self._state.children then
+            return 0
+        end
+
+        return #self._state.children
+    end,
+
+    __index = function(self, key)
+        local meta = getmetatable(self)
+        return meta.getEntity(self, key)
+    end
+}
+
+@skipSerialize({"main", "isPlugin", "plugins", "server", "listenedStates"})
+class BaseEntity {
+    server = nil,
+    children = nil,
+    __stateChangeHandler = nil,
+
+    constructor = function()
+        CombineHooks(self, "OnSpawn", "_BeforeOnSpawn", "_AfterOnSpawn")
+        CombineHooks(self, "OnDestroy", nil, "_AfterOnDestroy")
+    end,
+
+    @state("parent")
+    _OnParentChange = function(parent, load)
+        if load then return end
+
+        if parent then
+            self.parent = Entities:waitFor(self, parent)
+        else
+            self.parent = nil
+        end
+    end,
+
+    @state("root")
+    _OnRootChange = function(root, load)
+        if load then return end
+
+        if root then
+            self.root = Entities:waitFor(self, root)
+        else
+            self.root = nil
+        end
+    end,
+
+    _BeforeOnSpawn = function()
+        if self.isPlugin then
+            self.server = setmetatable({id = self.id, __type = self.main.__type.."."..self.__type}, server_rpc_mt)
+            local plugins = setmetatable({id = self.id, __type = self.main.__type}, server_plugin_rpc_mt)
+            rawset(self.server, "plugins", plugins) -- Caching
+        else
+            self.server = setmetatable({id = self.id, __type = self.__type}, server_rpc_mt)
+        end
+
+        self.children = setmetatable({_state = self.state, _parent = self}, children_mt)
+
+        if self.state.parent then
+            self.parent = Entities:waitFor(self, self.state.parent)
+        end
+
+        if self.state.root then
+            self.root = Entities:waitFor(self, self.state.root)
+        end
+
+        if not self.isPlugin then
+            Entities:add(self)
+        end
+    end,
+
+    _AfterOnSpawn = function()
+        local function onStateChange(listeners, value, initial)
+            for _, data in pairs(listeners) do
+                if data.value ~= nil then
+                    if value ~= data.value then
+                        continue
+                    end
+                end
+
+                data.fn(value, initial)
+            end
+        end
+
+        if self.listenedStates and next(self.listenedStates) then
+            for key, listeners in pairs(self.listenedStates) do
+                Citizen.CreateThread(function()
+                    onStateChange(listeners, self.state[key], true)
+                end)
+            end
+
+            self.__stateChangeHandler = UtilityNet.AddStateBagChangeHandler(self.id, function(key, value)
+                local listeners = self.listenedStates[key]
+
+                if listeners then
+                    onStateChange(listeners, value, false)
+                end
+            end)
+        end
+    end,
+
+    _AfterOnDestroy = function()
+        if self.__stateChangeHandler then
+            UtilityNet.RemoveStateBagChangeHandler(self.__stateChangeHandler)
+        end
+
+        if not self.isPlugin then
+            Entities:remove(self)
+        end
+    end,
+
+    getChild = function(path: string)
+        if path:find("/") then
+            local child = self
+
+            for str in path:gmatch("([^/]+)") do
+                if not child or not child.children then
+                    return nil
+                end
+
+                child = child.children[str]
+            end
+
+            return child
+        end
+
+        return self.children[path]
+    end,
+
+    getChildBy = function(key: string, value)
+        for name, child in pairs(self.children) do
+            if type(value) == "function" then
+                if value(child[key]) then
+                    return child
+                end
+            else
+                if child[key] == value then
+                    return child
+                end
+            end
+        end
+
+        return nil
+    end,
+
+    getChildrenBy = function(key: string, value)
+        local children = {}
+
+        for name, child in pairs(self.children) do
+            if type(value) == "function" then
+                if value(child[key]) then
+                    children[name] = child
+                end
+            else
+                if child[key] == value then
+                    children[name] = child
+                end
+            end
+        end
+
+        return children
+    end,
+
+    getCoords = function()
+        return GetEntityCoords(self.obj)
+    end,
+
+    getCoordsOffset = function(offset)
+        return GetOffsetFromEntityInWorldCoords(self.obj, offset)
+    end,
+
+    setCoords = function(coords)
+        if self.id then
+            UtilityNet.SetEntityCoords(self.id, coords)
+        end
+    end,
+
+    getRotation = function()
+        return GetEntityRotation(self.obj)
+    end,
+
+    setRotation = function(rotation)
+        if self.id then
+            UtilityNet.SetEntityRotation(self.id, rotation)
+        end
+    end,
+}
+
+class BaseEntityOneSync extends BaseEntity {
+    _CreateOneSyncEntity = function(enttype)
+        local _obj = nil
+
+        if enttype == "Veh" then
+            _obj = CreateVehicle(self.model, GetEntityCoords(self.obj), GetEntityHeading(self.obj), true, true)
+        elseif enttype == "Ped" then
+            _obj = CreatePed(self.model, GetEntityCoords(self.obj), GetEntityHeading(self.obj), true, true)
+        elseif enttype == "Obj" then
+            _obj = CreateObject(self.model, GetEntityCoords(self.obj), GetEntityHeading(self.obj), true, true)
+        end
+
+        if not _obj then
+            error("OneSyncEntity: Failed to create entity for "..tostring(self.id)..", "..tostring(enttype).." is not an allowed type!")
+            return
+        end
+        
+        while not DoesEntityExist(_obj) do
+            Wait(0)
+        end
+
+        local netid = NetworkGetNetworkIdFromEntity(_obj)
+        self.server:_created(netid)
+    end,
+
+    _BeforeOnSpawn = function()
+        self.super:_BeforeOnSpawn()
+
+        local type, model = self.model:match("^[^:]+:([^:]+):([^:]+)$")
+        self.model = model 
+
+        if not self.state.netId or not NetworkDoesNetworkIdExist(self.state.netId) then
+            local allowed = self.server:_askPermission()
+
+            if allowed then
+                self:_CreateOneSyncEntity(type)
+            end
+        end
+
+        while not self.state.netId do
+            Wait(0)
+        end
+
+        self._obj = self.obj
+        self.obj = NetworkGetEntityFromNetworkId(self.state.netId)
+        self.netId = self.state.netId
+    end
+}
+
+-- RPC
+local disableTimeoutNext = false
+
+function SetRPCNamespace(_namespace)
+    namespace = _namespace
+end
+
+local GenerateCallbackId = function()
+    return "cb"..GetHashKey(GetPlayerName(-1) .. GetGameTimer())
+end
+
+local AwaitCallback = function(name, id)
+    local p = promise.new()    
+   
+    if not disableTimeoutNext then
+        Citizen.SetTimeout(5000, function()
+            if p.state == 0 then
+                warn("Server callback ${name} (${tostring(id)}) timed out")
+                p:reject({})
+            end
+        end)
+    else
+        disableTimeoutNext = false
+    end
+
+    local eventHandler = nil
+
+    -- Register a new event to handle the callback from the server
+    RegisterNetEvent(name)
+    eventHandler = AddEventHandler(name, function(_id, data)
+        if _id ~= id then return end
+
+        Citizen.SetTimeout(1, function()
+            RemoveEventHandler(eventHandler)
+        end)
+        p:resolve(data)
+    end)
+
+    return p
+end
+
+Server = setmetatable({ 
+    DisableTimeoutForNext = function()
+        disableTimeoutNext = true
+    end
+}, {
+    __index = function(self, key)
+        local name = namespace.."Server:"..key
+
+        return function(...)
+            -- Wait that callbacks are loaded
+            while not callbacksLoaded and key ~= "GetCallbacks" do
+                Wait(0)
+            end
+
+            if callbacks[key] then
+                local id = GenerateCallbackId()
+                local p = AwaitCallback(name, id)
+                
+                TriggerServerEvent(name, id, ...)
+                return table.unpack(Citizen.Await(p))
+            else
+                TriggerServerEvent(name, ...)
+            end
+        end
+    end,
+})
+
+-- Request callbacks from server (with a callback)
+Citizen.CreateThreadNow(function()
+    callbacks = Server.GetCallbacks()
+    callbacksLoaded = true
+
+    RegisterNetEvent(namespace.."RegisterCallback")
+    AddEventHandler(namespace.."RegisterCallback", function(key)
+        callbacks[key] = true
+    end)
+end)
+
+------------------------------------
+
+--BUILD @utility_objectify/client/objectManagement.lua
+-- v1.5
+local tag = "^3ObjectManagement^0"
+local modelScripts = {}
+local objectScripts = {}
+local registeredObjects = {}
+local tempObjectsProperties = {} -- Used to store temporary object properties for later instantiation
+local customHooks = {}
+
+local function GetScriptsForModel(model)
+    return modelScripts[model]
+end
+
+local function _IsObjectScriptRegistered(model, name)
+    local scripts = GetScriptsForModel(model)
+    if scripts then
+        for k,v in ipairs(scripts) do
+            if v.name == name then
+                return true
+            end
+        end
+    end
+end
+
+-- Temp objects instances can interact only with tempObjectsProperties, not real instance runtime changed properties
+-- Real objects instances can interact also with tempObjectsProperties
+local function CreateTempObjectAndCallMethod(uNetId, model, method, ...)
+    local _model = type(model) == "string" and GetHashKey(model) or model
+    local scripts = GetScriptsForModel(_model)
+    
+    local _self = nil
+    local _oldNewIndex = nil
+
+    if not scripts then
+        return
+    end
+    
+    for k,v in pairs(scripts) do
+        if v.script.__prototype[method] then
+            if not _self then
+                _self = new v.script()
+                _self.state = UtilityNet.State(uNetId)
+                _self.id = uNetId
+
+                -- Set all temp object properties to new temp instance 
+                -- (so that things done in OnRegister can be reused also in OnUnregister)
+                -- This is done voluntarily like this to dont allow to access real instance properties and prevent strange bugs 
+                -- (when unregistering a rendered object or unrendered the OnUnregister will be called with different objects creating strange situational bugs)
+                if tempObjectsProperties[uNetId] then
+                    for k,v in pairs(tempObjectsProperties[uNetId]) do
+                        _self[k] = v
+                    end
+                end
+
+                local metatable = getmetatable(_self)
+                _oldNewIndex = metatable.__newindex
+
+                metatable.__newindex = function(self, key, value)
+                    -- We store all object properties in a temp table to set them later on object instantiation/OnUnregister
+                    if not tempObjectsProperties[uNetId] then
+                        tempObjectsProperties[uNetId] = {}
+                    end
+
+                    tempObjectsProperties[uNetId][key] = value
+                    rawset(self, key, value)
+                end
+            end
+
+            _self[method](_self, ...)
+        end
+    end
+
+    if _self then -- Reset metatable to default!
+        local metatable = getmetatable(_self)
+        metatable.__newindex = _oldNewIndex
+    end
+end
+
+local function CallOnRegister(uNetId, model, coords, rotation)
+    registeredObjects[uNetId] = promise.new()
+    CreateTempObjectAndCallMethod(uNetId, model, "OnRegister", coords, rotation)
+    registeredObjects[uNetId]:resolve(true)
+end
+
+local function CreateObjectScriptInstance(obj, scriptIndex, source)
+    local model = nil
+    local uNetId = nil
+    local scripts = nil
+
+    if type(obj) == "table" then
+        model = obj.model
+        uNetId = obj.netId
+        scripts = obj.scripts
+        obj = obj.obj
+    else
+        model = GetEntityModel(obj)
+        uNetId = UtilityNet.GetUNetIdFromEntity(obj)
+        scripts = GetScriptsForModel(model)
+    end
+
+
+    if not scripts then
+        developer(tag, "Model ^4"..model.."^0 has no scripts, skipping script index "..scriptIndex)
+        return
+    end
+
+    local script = scripts[scriptIndex]
+    
+    -- Script already registered, skipping
+    if objectScripts[obj][script.name] then
+        developer("^1ObjectManagement^0", "Skipping ^1"..GetEntityArchetypeName(obj).."^0 since is already registered > ^5"..script.name.."^0 for "..obj)
+        return
+    end
+
+    if source == "Registered" and Config?.ObjectManagementDebug?.Registered then
+        developer(tag .. " ^2Registered^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    elseif source == "GetInstance" and Config?.ObjectManagementDebug?.GetInstance then
+        developer(tag .. " ^3GetInstance^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    elseif source == "CreateInstances" and Config?.ObjectManagementDebug?.CreateInstances then
+        developer(tag .. " ^6CreateInstances^0", "Creating instance ^4"..GetEntityArchetypeName(obj).."^0 > ^5"..script.name.."^0 for "..obj)
+    end
+
+    -- This "mechanism" is similar to the server side, where is a little cleaner
+
+    if script.name ~= "main" then
+        -- We need to set it in the prototype since the rpc decorator is called before full object initialization
+        script.script.__prototype.isPlugin = true
+        script.script.__prototype.main = objectScripts[obj]["main"]
+    end
+
+    local instance = new script.script()
+
+    instance.state = UtilityNet.State(uNetId)
+    instance.id = uNetId
+    instance.obj = obj
+
+    if script.name ~= "main" then
+        local main = objectScripts[obj]["main"]
+
+        -- Reset prototype for future object instantiations
+        script.script.__prototype.isPlugin = nil
+        script.script.__prototype.main = nil
+
+        -- Reset the values on this object instance
+        instance.isPlugin = true
+        instance.main = main
+
+        main.plugins[script.name] = instance -- Register plugin in main instance
+    end
+
+    -- On object instantiation set all temp object properties to real instance (saves a lot of memory)
+    if tempObjectsProperties[uNetId] then
+        for k,v in pairs(tempObjectsProperties[uNetId]) do
+            instance[k] = v
+        end
+    end
+
+    -- Call all hooks .exec method
+    for hookMethod, hook in pairs(customHooks) do
+        if instance[hookMethod] and hook.exec then
+            hook.exec(instance, name)
+        end
+    end
+
+    -- Register script instance on object
+    objectScripts[obj][script.name] = instance
+
+    return instance
+end
+
+local function CreateObjectScriptsInstances(objInfo)
+    if not objInfo.scripts then
+        developer(tag, "Model ^4"..objInfo.model.."^0 has no scripts, skipping scripts instances creation")
+        return false
+    end
+    
+    objectScripts[objInfo.obj] = {}
+
+    local model_name = GetEntityArchetypeName(objInfo.obj)
+
+    -- Create main script before possible plugins
+    local main = CreateObjectScriptInstance(objInfo, 1, "GetInstance")
+    main.plugins = {} -- Allow plugins to register themself
+    main.model = model_name
+
+    objectScripts[objInfo.obj]["main"] = main
+
+    -- Create script instances in registration order (only plugins)
+    for k,v in ipairs(objInfo.scripts) do
+        if v.name ~= "main" then
+            objectScripts[objInfo.obj][v.name] = CreateObjectScriptInstance(objInfo, k, "CreateInstances")
+            objectScripts[objInfo.obj][v.name].model = model_name
+        end
+    end
+
+    return true
+end
+
+function CallMethodForAllObjectScripts(obj, method, ...)
+    local model = nil
+    local scripts = nil
+    
+    if type(obj) == "table" then
+        model = obj.model
+        scripts = obj.scripts
+        obj = obj.obj
+    else
+        model = Entity(obj).state.model
+        scripts = GetScriptsForModel(model)
+    end
+
+
+    if not scripts then
+        developer(tag, "Model ^4"..tostring(model).."^0 has no scripts, ignoring call method "..method)
+        return
+    end
+
+    for k,v in ipairs(scripts) do
+        if not DoesEntityExist(obj) then -- Object was deleted in the meantime
+            break
+        end
+
+        local instance = GetObjectScriptInstance(obj, v.name, true)
+        
+        if not instance then -- Instance was deleted in the meantime
+            break
+        end
+        
+        if instance[method] then
+            instance[method](instance, ...)
+        end
+        
+        -- Propagate events also for custom hooks
+        for hookMethod, hook in pairs(customHooks) do
+            -- If this script instance and the hook implements the method
+            if instance[hookMethod] and hook[method] then
+                -- Temporarily create the call function to call the original method
+                local call = function(...) 
+                    CallMethodForAllObjectScripts(instance.obj, hookMethod, ...)
+                end
+
+                hook[method](instance, call, ...)
+            end
+        end
+    end
+end
+
+--#region External API
+function RegisterObjectScript(model, name, script)
+    local hashmodel = type(model) == "string" and GetHashKey(model) or model
+
+    if not modelScripts[hashmodel] then
+        modelScripts[hashmodel] = {}
+    end
+
+    if not script then
+        error("RegisterObjectScript: tried to register "..model.." > "..name.." but script is empty")
+    end
+
+    if IsObjectScriptRegistered(hashmodel, name) then
+        developer(tag, "Model ^4"..model.."^0 > ^5"..name.."^0 is already registered, skipping")
+        return
+    end
+    
+    if name == "main" then
+        table.insert(modelScripts[hashmodel], 1, {
+            script = script,
+            name = name
+        })
+    else
+        table.insert(modelScripts[hashmodel], {
+            script = script,
+            name = name
+        })
+    end
+
+    -- Register script for already spawned objects
+    local scriptIndex = #modelScripts[hashmodel]
+
+    if not table.empty(objectScripts) then
+        for obj, scripts in pairs(objectScripts) do
+            local model = GetEntityModel(obj)
+
+            -- Same model and script is not already registered
+            if model == hashmodel and not objectScripts[obj][name] then
+                objectScripts[obj][name] = CreateObjectScriptInstance(obj, scriptIndex, "Registered")
+            end
+        end
+    end
+end
+
+function RegisterObjectsScript(models, name, script)
+    for k,v in pairs(models) do
+        RegisterObjectScript(v, name, script)
+    end
+end
+
+function IsObjectScriptRegistered(model, name)
+    local hashmodel = type(model) == "string" and GetHashKey(model) or model
+
+    return _IsObjectScriptRegistered(hashmodel, name)
+end
+
+---@class Hook
+---@field exec function Called when any script object is created
+---@field OnSpawn fun(self, call:function) Called when a script instance is created
+---@field AfterSpawn fun(self, call:function) Called after a script instance is created
+---@field OnDespawn fun(self, call:function) Called when a script instance is despawned
+
+---Register a custom hook (works like a custom method)
+---@param hookMethod string The name of the method for using the hook
+---@param hookData Hook The table includes the following default methods: `exec`, `OnSpawn`, `AfterSpawn`, `OnDespawn`. Additionally, a function parameter `call` is added to call the original method in all script instances.
+function RegisterCustomHook(hookMethod, hookData)
+    customHooks[hookMethod] = hookData
+end
+
+---Pass a script as "static", no instance is created, the script will be returned as it is (table)  
+---Not safe to edit the "static" script or calling functions without providing a custom "instance" mockup
+---@param model string
+---@param name string The script name
+function GetExternalObjectScriptStatic(model, name)
+    if type(model) == "string" then
+        model = GetHashKey(model)
+    end
+    
+    if not modelScripts[model] then return end
+
+    for k,v in pairs(modelScripts[model]) do
+        if v.name == name then
+            return v.script
+        end
+    end
+end
+
+function GetObjectScriptInstance(obj, name, nocheck)
+    if not obj then error("GetObjectScriptInstance: passed obj is nil, name: "..name) end
+    
+    if not nocheck then
+        if not UtilityNet.GetUNetIdFromEntity(obj) then return end -- Object is not networked
+
+        -- Wait that the object is rendered
+        local start = GetGameTimer()
+        while not UtilityNet.IsEntityRendered(obj) do
+            if GetGameTimer() - start > 5000 then
+                error("GetObjectScriptInstance: UtilityNet.IsEntityRendered timed out for "..GetEntityArchetypeName(obj).." > "..name, 2)
+            end
+            Citizen.Wait(0)
+        end
+    end
+
+    
+    if not objectScripts[obj] then
+        local model = GetEntityModel(obj)
+        -- Check if script should be loaded
+        if _IsObjectScriptRegistered(model, name) then
+            -- Wait for script to be loaded
+            local start = GetGameTimer()
+            while not objectScripts[obj] or not objectScripts[obj][name] do
+                if GetGameTimer() - start > 5000 then
+                    error("GetObjectScriptInstance: timed out for "..GetEntityArchetypeName(obj).." > "..name, 2)
+                end
+                Citizen.Wait(0)
+            end
+        else -- Script is not registered and will not be loaded in the future (dont exist)
+            return nil 
+        end
+    end
+
+    if not objectScripts[obj][name] then
+        local model = GetEntityModel(obj)
+        local scripts = GetScriptsForModel(model)
+        local scriptIndex = nil
+
+        for k,v in ipairs(scripts) do
+            if v.name == name then
+                scriptIndex = k
+                break
+            end
+        end
+
+        if not scriptIndex then
+            return
+        end
+
+        CreateObjectScriptInstance(obj, scriptIndex, "GetInstance")
+    end
+
+    return objectScripts[obj][name]
+end
+
+function GetNetScriptInstance(netid, name)
+    if not netid then error("GetNetScriptInstance: passed netid is nil", 2) return end
+
+    local start = GetGameTimer()
+    while not UtilityNet.IsReady(netid) do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out IsReady for netid "..tostring(netid), 2)
+        end
+        Citizen.Wait(0)
+    end
+
+    local obj = UtilityNet.GetEntityFromUNetId(netid)
+
+    local start = GetGameTimer()
+    while not UtilityNet.IsEntityRendered(obj) do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out IsEntityRendered for netid "..tostring(netid)..", obj "..tostring(obj), 2)
+        end
+        Citizen.Wait(0)
+    end
+
+    local model = GetEntityModel(obj)
+    if not IsObjectScriptRegistered(model, name) then
+        return nil
+    end
+
+    local start = GetGameTimer()
+    while not Entity(obj).state.om_scripts_created do
+        if GetGameTimer() - start > 5000 then
+            error("GetNetScriptInstance: timed out, not all scripts created after 5s for netid "..tostring(netid)..", obj "..tostring(obj), 2)
+        end
+
+        warn(obj..' waiting for all scripts to be created')
+        Citizen.Wait(0)
+    end
+
+    return GetObjectScriptInstance(obj, name)
+end
+
+function AreObjectScriptsFullyLoaded(obj)
+    if not DoesEntityExist(obj) then
+        warn("AreObjectScriptsFullyLoaded: object "..tostring(obj).." doesn't exist, skipping")
+        return false
+    end
+
+    local entity = Entity(obj)
+    if entity and entity.state and entity.state.om_loaded then
+        return true
+    end
+
+    return false
+end
+--#endregion
+
+RegisterCustomHook("OnStateChange", {
+    OnSpawn = function(env, call)
+        env.changeHandler = UtilityNet.AddStateBagChangeHandler(env.id, function(key, value)
+            call(key, value)
+        end)
+    end,
+    OnDestroy = function(env)
+        UtilityNet.RemoveStateBagChangeHandler(env.changeHandler)
+    end
+})
+
+if not UtilityNet then
+    error("Please load the utility_lib before utility_objectify!")
+end
+
+local resource = GetCurrentResourceName()
+UtilityNet.OnRender(function(id, obj, model)
+    if UtilityNet.GetuNetIdCreator(id) ~= resource then
+        return
+    end
+
+    if objectScripts[obj] then
+        warn("Skipping render of "..id.." since it already has some registered scripts")
+        return
+    end
+
+    if not registeredObjects[id] then
+        CallOnRegister(id, model, GetEntityCoords(obj), GetEntityRotation(obj))
+    else
+        Citizen.Await(registeredObjects[id])
+    end
+
+
+    local model = GetEntityModel(obj)
+
+    local objInfo = {
+        obj = obj,
+        netId = id,
+        model = model,
+        scripts = GetScriptsForModel(model)
+    }
+
+    local created = CreateObjectScriptsInstances(objInfo)
+
+    if not created then
+        return
+    end
+
+    Entity(obj).state:set("om_scripts_created", true, false)
+    Entity(obj).state:set("model", model, false) -- Preserve original model to fetch scripts (since can be replace with CreateModelSwap)
+
+    UtilityNet.PreserveEntity(id)
+
+    CallMethodForAllObjectScripts(objInfo, "OnAwake")
+    CallMethodForAllObjectScripts(objInfo, "OnSpawn")
+    CallMethodForAllObjectScripts(objInfo, "AfterSpawn")
+    
+    -- During the different calls the entity could have been deleted
+    if DoesEntityExist(obj) then
+        -- Used for tracking object loading state
+        Entity(obj).state:set("om_loaded", true, false)
+    end
+end)
+
+UtilityNet.OnUnrender(function(id, obj, model)
+    if not objectScripts[obj] then
+        return
+    end
+
+    CallMethodForAllObjectScripts(obj, "OnDestroy")
+    objectScripts[obj] = nil
+
+    if Config?.ObjectManagementDebug?.Deleting then
+        developer(tag, "Deleting ^4"..GetEntityArchetypeName(obj).."^0 instances")
+    end
+
+    DeleteEntity(obj)
+end)
+
+RegisterNetEvent("Utility:Net:EntityCreated", function(_, object)
+    if registeredObjects[object.id] then
+        return
+    end
+
+    rotation = object?.options?.rotation or vec3(0, 0, 0)
+    CallOnRegister(object.id, object.model, object.coords, rotation)
+end)
+
+RegisterNetEvent("Utility:Net:RequestDeletion", function(uNetId, model, coords, rotation)
+    rotation = rotation or vec3(0, 0, 0)
+
+    registeredObjects[uNetId] = nil
+    CreateTempObjectAndCallMethod(uNetId, model, "OnUnregister", coords, rotation)
+    tempObjectsProperties[uNetId] = nil -- Clear all temp properties on deletion (always)
+end)
+
+Citizen.CreateThread(function()
+    local entities = UtilityNet.GetServerEntities({
+        where = {createdBy = resource},
+        select = {"id", "model", "coords", "options"}
+    })
+
+    for _, entity in pairs(entities) do
+        if not registeredObjects[entity.id] then
+            CallOnRegister(entity.id, entity.model, entity.coords, entity.options.rotation)
+        end
+    end
+end)
+
+--#region Debug
+Citizen.CreateThread(function()
+    if DevModeStatus then
+        while true do
+            local found, entity = GetEntityPlayerIsFreeAimingAt(PlayerId())
+
+            if found and objectScripts[entity] then
+                local coords = GetEntityCoords(entity)
+                local text = "INSTANCES:"
+
+                for name, instance in pairs(objectScripts[entity]) do
+                    text = text .. "\n"..name.." : "..tostring(instance)
+                end
+
+                DrawText3Ds(coords, text)
+            end
+            
+            Citizen.Wait(1)
+        end
+    end
+end)
+--#endregion
+
+------------------------------------
+

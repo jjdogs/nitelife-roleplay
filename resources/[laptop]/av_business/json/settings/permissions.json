@@ -1,0 +1,33 @@
+[
+  {
+    "value": "employees",
+    "jobs": false,
+    "label": "Employees",
+    "default": false
+  },
+  { "value": "products", "jobs": false, "label": "Products", "default": false },
+  { "value": "bank", "jobs": false, "label": "Bank", "default": false },
+  {
+    "value": "applications",
+    "jobs": false,
+    "label": "Applications",
+    "default": false
+  },
+  { "value": "stashes", "jobs": false, "label": "Stashes", "default": true },
+  { "value": "cameras", "jobs": false, "label": "Cameras", "default": false },
+  { "value": "supplies", "jobs": false, "label": "Supplies", "default": false },
+  { "value": "billing", "jobs": false, "label": "Billing", "default": false },
+  { "value": "poster", "jobs": false, "label": "Poster", "default": false },
+  {
+    "value": "deliveries",
+    "jobs": false,
+    "label": "Deliveries",
+    "default": true
+  },
+  {
+    "value": "discounts",
+    "label": "Discounts",
+    "jobs": false,
+    "default": false
+  }
+]

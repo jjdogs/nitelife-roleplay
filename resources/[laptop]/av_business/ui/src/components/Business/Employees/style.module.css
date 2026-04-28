@@ -1,0 +1,32 @@
+.input {
+  background-color: rgba(13, 14, 15, 0.25);
+  border: solid 1px rgba(255, 255, 255, 0.1);
+}
+
+.input:focus {
+  border: solid 1px rgba(255, 255, 255, 0.1);
+}
+
+@media (max-height: 900px) and (min-height: 701px) {
+  .scroll {
+    height: calc(95vh - 130px);
+  }
+}
+
+@media (max-height: 700px) {
+  .scroll {
+    height: calc(80vh - 130px);
+  }
+}
+
+@media (min-height: 901px) {
+  .scroll {
+    height: calc(95vh - 130px);
+  }
+}
+
+.employeeCard {
+  background-color: var(--bg-card);
+  border: solid 1px var(--border);
+  border-radius: 8px;
+}

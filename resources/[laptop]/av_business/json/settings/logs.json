@@ -1,0 +1,56 @@
+[
+  {
+    "jobs": false,
+    "label": "Applications",
+    "description": "Receive an alert when a new application is submitted to your business.",
+    "value": "applications"
+  },
+  {
+    "jobs": false,
+    "label": "Cashier",
+    "description": "Receive an alert when someone pays at the cashiers.",
+    "value": "cashier"
+  },
+  {
+    "jobs": false,
+    "label": "Rating",
+    "description": "Receive an alert when someone rates your business.",
+    "value": "rate"
+  },
+  {
+    "jobs": false,
+    "label": "Duty",
+    "description": "Receive an alert when your STAFF enters/leaves duty.",
+    "value": "duty"
+  },
+  {
+    "jobs": false,
+    "label": "Employees",
+    "description": "Receive an alert when an employee gets modified.",
+    "value": "employee"
+  },
+  {
+    "jobs": false,
+    "label": "Bank Logs",
+    "description": "Receive an alert when someone makes a deposit/withdraw.",
+    "value": "bank"
+  },
+  {
+    "jobs": false,
+    "label": "Items",
+    "description": "Receive an alert when someone add/edit/delete an item from your business.",
+    "value": "items"
+  },
+  {
+    "jobs": false,
+    "label": "Posters",
+    "description": "Receive an alert when someone edits the business poster.",
+    "value": "poster"
+  },
+  {
+    "jobs": false,
+    "label": "Supplies",
+    "description": "Receive an alert when someone buys supplies for the business.",
+    "value": "supplies"
+  }
+]

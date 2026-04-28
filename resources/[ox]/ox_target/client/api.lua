@@ -525,4 +525,23 @@ function api.isActive()
     return state.isActive()
 end
 
+function api.setZoneDebug(id, enabled)
+    local allZones = lib.zones.getAllZones()
+    if type(id) == 'number' then
+        local zone = allZones[id]
+        if zone then
+            zone.setDebug(zone, enabled)
+            return true
+        end
+    elseif type(id) == 'string' then
+        for _, zone in pairs(allZones) do
+            if zone.name == id then
+                zone.setDebug(zone, enabled)
+                return true
+            end
+        end
+    end
+    return false
+end
+
 return api

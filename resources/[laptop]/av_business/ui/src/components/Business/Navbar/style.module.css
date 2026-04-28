@@ -1,0 +1,44 @@
+.navbar {
+  background-color: var(--bg-sidebar);
+  min-width: 180px;
+  width: 180px;
+  height: 100vh;
+  overflow: auto;
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 8px 8px 0px;
+  gap: 8px;
+  border-radius: 8px;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.option:hover {
+  cursor: pointer;
+  color: white;
+}
+
+@media (max-height: 900px) and (min-height: 701px) {
+  .scroll {
+    height: calc(95vh - 130px);
+  }
+}
+
+@media (max-height: 700px) {
+  .scroll {
+    height: calc(85vh - 100px);
+  }
+}
+
+@media (min-height: 901px) {
+  .scroll {
+    height: calc(95vh - 130px);
+  }
+}

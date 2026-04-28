@@ -1,0 +1,17 @@
+:root {
+  --font-display: "Rajdhani", sans-serif;
+  --bg-main: #1e222d;
+  --bg-sidebar: #161922;
+  --bg-card: #252a37;
+  --bg-input: #161922;
+  --accent: #a855f7;
+  --accent-hover: #c084fc;
+  --cyan: #22d3ee;
+  --text-main: #f8fafc;
+  --text-dim: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+  --success: #4ade80;
+  --danger: #f87171;
+  --tooltip: #161922;
+  --yellow: #fab005;
+}

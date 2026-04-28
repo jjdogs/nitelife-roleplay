@@ -1,0 +1,74 @@
+.content {
+  background-color: var(--bg-main);
+  border: solid 1px rgba(255, 255, 255, 0.1);
+}
+.header {
+  background-color: var(--bg-main);
+}
+
+.input {
+  background-color: var(--bg-input);
+  color: var(--text-main);
+  border: solid 1px rgba(255, 255, 255, 0.1);
+}
+
+.input:focus {
+  border: solid 1px rgba(255, 255, 255, 0.1);
+}
+
+.dropdown {
+  background-color: var(--bg-input);
+  border: solid 1px var(--border);
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.option {
+  font-size: 12px;
+}
+
+.option:hover {
+  background-color: rgba(155, 155, 155, 0.3);
+}
+
+.mantine-Modal-inner {
+  width: 100%;
+  height: 100%;
+  background-color: red;
+}
+
+.button {
+  background-color: var(--accent);
+  &:disabled,
+  &[data-disabled] {
+    color: var(--text-dim);
+  }
+}
+
+.button:hover {
+  background-color: var(--accent);
+  &:disabled,
+  &[data-disabled] {
+    color: var(--text-dim);
+  }
+}
+
+.redButton {
+  background-color: var(--danger);
+}
+
+.redButton:hover {
+  background-color: var(--danger);
+}
+
+.tooltip {
+  background-color: gray;
+  display: flex;
+  height: 16px;
+  width: 16px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50px;
+  margin-left: auto;
+}

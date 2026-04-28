@@ -1,0 +1,1 @@
+local registered = exports['av_contacts']:newContact(Config.Contact)

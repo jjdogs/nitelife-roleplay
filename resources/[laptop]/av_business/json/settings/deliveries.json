@@ -1,0 +1,13 @@
+{
+  "stash": { "slots": 10, "weight": 100000, "label": "Customer" },
+  "maxDistance": 2500,
+  "maxPrice": 100,
+  "overprice": 25,
+  "minProducts": 3,
+  "maxProducts": 10,
+  "deliveryWait": [1, 3],
+  "enabled": true,
+  "toIgnore": ["others", "boxes"],
+  "maxTip": 199,
+  "maxOrders": 25
+}

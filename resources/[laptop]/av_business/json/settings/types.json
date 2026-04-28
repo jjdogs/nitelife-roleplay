@@ -1,0 +1,50 @@
+[
+  {
+    "value": "drink",
+    "remove": true,
+    "event": "av_business:consumable",
+    "weight": 1000,
+    "label": "Drink",
+    "jobs": false
+  },
+  {
+    "value": "food",
+    "remove": true,
+    "event": "av_business:consumable",
+    "weight": 1000,
+    "label": "Food",
+    "jobs": false
+  },
+  {
+    "value": "joint",
+    "remove": true,
+    "event": "av_business:consumable",
+    "weight": 1000,
+    "label": "Joint",
+    "jobs": false
+  },
+  {
+    "value": "others",
+    "remove": true,
+    "event": "av_business:consumable",
+    "weight": 1000,
+    "label": "Others",
+    "jobs": false
+  },
+  {
+    "value": "box",
+    "remove": false,
+    "event": "av_business:box",
+    "weight": 5100,
+    "label": "Boxes",
+    "jobs": false
+  },
+  {
+    "value": "alcohol",
+    "remove": true,
+    "event": "av_business:consumable",
+    "weight": 1000,
+    "label": "Alcohol",
+    "jobs": false
+  }
+]

@@ -612,4 +612,67 @@ return {
         description = 'A Weeping Willow firework. Light it up and enjoy the show!',
         weight = 1000,
     },
+
+    ['flatbed_control'] = {
+        label = 'Flatbed Control',
+        description = 'Controller for a flatbed tow truck.',
+        weight = 100,
+    },
+
+-- ── Av_Laptop, etc. ─────────────────────────────────────────────────────────────
+
+['laptop'] = {
+        label = 'Laptop',
+        weight = 1,
+        stack = false,
+        close = true,
+        description = '',
+        buttons = {
+            {
+                label = "Devices",
+                action = function(slot)
+                    exports['av_laptop']:openContainer(slot)
+                end,
+            }
+        }
+    },
+
+    ['decrypter'] = {
+        label = 'Decrypter',
+        weight = 1,
+        stack = true,
+        close = true,
+        description = ''
+    },
+
+    ['black_usb'] = {
+        label = 'Black USB',
+        weight = 1,
+        stack = true,
+        close = true,
+        description = ''
+    },
+    
+    ['pendrive'] = {
+        label = 'Pendrive',
+        weight = 1,
+        stack = false,
+        close = false,
+        description = 'Can store personal data'
+    },
+-- ── Food Ingredients ─────────────────────────────────────────────────────────────
+
+    ['pendrive'] = {
+        label = 'Pendrive',
+        weight = 1,
+        stack = false,
+        close = false,
+        description = 'Can store personal data'
+    },
+
+
+
+
+-- ── Food Products ─────────────────────────────────────────────────────────────
+
 }
