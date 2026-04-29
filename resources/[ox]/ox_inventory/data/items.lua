@@ -613,9 +613,9 @@ return {
         weight = 1000,
     },
 
-    ['flatbed_control'] = {
-        label = 'Flatbed Control',
-        description = 'Controller for a flatbed tow truck.',
+    ['flatbed_remote'] = {
+        label = 'Flatbed Remote',
+        description = 'Remote controller for a flatbed tow truck.',
         weight = 100,
     },
 

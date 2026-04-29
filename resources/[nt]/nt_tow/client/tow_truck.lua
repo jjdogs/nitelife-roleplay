@@ -26,8 +26,8 @@ local function createAndAttachBed(flatbedVehicle)
 
     local sc = Config.FlatBedModels[GetEntityModel(flatbedVehicle)]
     AttachEntityToEntity(bedEntity, flatbedVehicle, GetEntityBoneIndexByName(flatbedVehicle, 'chassis'),
-        sc[0].pos[1], sc[0].pos[2], sc[0].pos[3],
-        sc[0].rot[1], sc[0].rot[2], sc[0].rot[3],
+        sc[1].pos[1], sc[1].pos[2], sc[1].pos[3],
+        sc[1].rot[1], sc[1].rot[2], sc[1].rot[3],
         false, false, true, false, 0, true)
 
     if not IsEntityAttachedToEntity(bedEntity, flatbedVehicle) then
@@ -51,7 +51,7 @@ local function reattachBed(flatbedVehicle, bedNetId)
 
     SetEntityAsMissionEntity(bedEntity, true, true)
     local sc = Config.FlatBedModels[GetEntityModel(flatbedVehicle)]
-    local state = Entity(flatbedVehicle).state.bedLowered and 2 or 0
+    local state = Entity(flatbedVehicle).state.bedLowered and 3 or 1
     AttachEntityToEntity(bedEntity, flatbedVehicle, GetEntityBoneIndexByName(flatbedVehicle, 'chassis'),
         sc[state].pos[1], sc[state].pos[2], sc[state].pos[3],
         sc[state].rot[1], sc[state].rot[2], sc[state].rot[3],
@@ -145,10 +145,10 @@ function LowerFlatbed(flatbedVehicle)
     local bedEntity = NetworkGetEntityFromNetworkId(Entity(flatbedVehicle).state.bedProp)
     PlaySoundEffect(flatbedVehicle)
     local lerpVal = 0.0
-    local state = 0
+    local state = 1
     CreateThread(function()
         while true do
-            if state == 2 then
+            if state == 3 then
                 Entity(flatbedVehicle).state:set('bedLowered', true, true)
                 Entity(flatbedVehicle).state:set('bedMoving', false, true)
                 ReleaseSoundEffect()
@@ -162,7 +162,7 @@ function LowerFlatbed(flatbedVehicle)
             AttachEntityToEntity(bedEntity, flatbedVehicle, GetEntityBoneIndexByName(flatbedVehicle, 'chassis'),
                 offsetPos[1], offsetPos[2], offsetPos[3], offsetRot[1], offsetRot[2], offsetRot[3],
                 false, false, true, false, 0, true)
-            lerpVal = lerpVal + GetFrameTime() / stateTimerConstants[state + 1]
+            lerpVal = lerpVal + GetFrameTime() / stateTimerConstants[state]
             if lerpVal >= 1.0 then lerpVal = 0.0; state = state + 1 end
             Wait(0)
         end
@@ -176,10 +176,10 @@ function RaiseFlatbed(flatbedVehicle)
     local bedEntity = NetworkGetEntityFromNetworkId(Entity(flatbedVehicle).state.bedProp)
     PlaySoundEffect(flatbedVehicle)
     local lerpVal = 0.0
-    local state = 2
+    local state = 3
     CreateThread(function()
         while true do
-            if state == 0 then
+            if state == 1 then
                 Entity(flatbedVehicle).state:set('bedLowered', false, true)
                 Entity(flatbedVehicle).state:set('bedMoving', false, true)
                 ReleaseSoundEffect()
@@ -193,7 +193,7 @@ function RaiseFlatbed(flatbedVehicle)
             AttachEntityToEntity(bedEntity, flatbedVehicle, GetEntityBoneIndexByName(flatbedVehicle, 'chassis'),
                 offsetPos[1], offsetPos[2], offsetPos[3], offsetRot[1], offsetRot[2], offsetRot[3],
                 false, false, true, false, 0, true)
-            lerpVal = lerpVal + GetFrameTime() / stateTimerConstants[state]
+            lerpVal = lerpVal + GetFrameTime() / stateTimerConstants[state - 1]
             if lerpVal >= 1.0 then lerpVal = 0.0; state = state - 1 end
             Wait(0)
         end
@@ -204,6 +204,8 @@ function AttachVehicle(flatbedVehicle, vehicleToAttach)
     if not DoesEntityExist(vehicleToAttach) then return end
     if not DoesFlatbedHaveBedAndNotMoving(flatbedVehicle) then return end
     local bedToAttachTo = NetworkGetEntityFromNetworkId(Entity(flatbedVehicle).state.bedProp)
+    NetworkRequestControlOfEntity(vehicleToAttach)
+    NetworkRequestControlOfEntity(bedToAttachTo)
     AttachEntityToEntity(vehicleToAttach, bedToAttachTo, 0,
         0.0, 1.8, 0.5,
         0.0, 0.0, 0.0,
@@ -216,7 +218,25 @@ function DetachVehicle(vehicleToDetach)
     SetVehicleOnGroundProperly(vehicleToDetach)
 end
 
-RegisterCommand('objbones', function()
+function DoesFlatbedHaveBedAndNotMoving(vehicle)
+    return Entity(vehicle).state.bedProp ~= nil and not Entity(vehicle).state.bedMoving
+end
+
+function PlaySoundEffect(entity)
+    if soundId then StopSound(soundId); ReleaseSoundId(soundId) end
+    soundId = GetSoundId()
+    PlaySoundFromEntity(soundId, 'OPENING', entity, 'DOOR_GARAGE', false, false)
+end
+
+function ReleaseSoundEffect()
+    if not soundId then return end
+    StopSound(soundId)
+    ReleaseSoundId(soundId)
+    soundId = nil
+end
+
+if Config.Debug then
+    RegisterCommand('objbones', function()
     local playerCoords = GetEntityCoords(PlayerPedId())
     local closest, closestDist = nil, math.huge
     for _, obj in ipairs(GetGamePool('CObject')) do
@@ -236,20 +256,4 @@ RegisterCommand('objbones', function()
         end
     end
 end, false)
-
-function DoesFlatbedHaveBedAndNotMoving(vehicle)
-    return Entity(vehicle).state.bedProp ~= nil and not Entity(vehicle).state.bedMoving
-end
-
-function PlaySoundEffect(entity)
-    if soundId then StopSound(soundId); ReleaseSoundId(soundId) end
-    soundId = GetSoundId()
-    PlaySoundFromEntity(soundId, 'OPENING', entity, 'DOOR_GARAGE', false, false)
-end
-
-function ReleaseSoundEffect()
-    if not soundId then return end
-    StopSound(soundId)
-    ReleaseSoundId(soundId)
-    soundId = nil
 end

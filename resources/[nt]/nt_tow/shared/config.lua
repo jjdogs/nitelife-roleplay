@@ -6,7 +6,7 @@ Config.Contact = {
     identifier = 'towContact',
     name = 'Naveed Carr',
     avatar = 'https://files.fivemerr.com/images/303c36b5-0730-4d9f-b1c8-e61725a233d3.png',
-    coords = {x = 495.82, y = -1340.88, z = 29.31}, -- vector3(495.82, -1340.88, 29.31)
+    coords = vector3(495.82, -1340.88, 29.31), -- vector3(495.82, -1340.88, 29.31)
     description = 'Come talk to me to get started with the world of towing.',
     default = true,
     max = 5,

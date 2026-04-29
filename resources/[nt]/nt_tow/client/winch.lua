@@ -4,8 +4,6 @@ local hookProp = nil
 local ropeHandle = nil
 local isWinding = false
 local attachedToBed = nil
-
-
 local RegisterBedAttachTarget
 
 local function RegisterBedDetachTarget(flatbed, vehicle)
@@ -34,7 +32,7 @@ RegisterBedAttachTarget = function(flatbed, vehicle)
         name = 'bed_attach',
         label = 'Attach to Bed',
         onSelect = function()
-            if hookedVehicle ~= nil or hookProp ~= nil then
+            if ropeHandle ~= nil then
                 lib.notify({ title = 'Tow Truck', description = 'Unhook the vehicle first', type = 'error' })
                 return
             end
@@ -100,14 +98,17 @@ local function ShowFlatbedMenu(flatbed)
                                     break
                                 end
                                 local dir = (targetCoords - vehCoords) / dist
+                                NetworkRequestControlOfEntity(hookedVehicle)
                                 SetEntityVelocity(hookedVehicle, dir.x * 1.0, dir.y * 1.0, dir.z * 1.0)
                                 Wait(0)
                             end
                             if hookedVehicle and DoesEntityExist(hookedVehicle) then
+                                NetworkRequestControlOfEntity(hookedVehicle)
                                 SetEntityVelocity(hookedVehicle, 0.0, 0.0, 0.0)
                                 local targetCoords = GetOffsetFromEntityInWorldCoords(bedEntity, 0.0, 1.8, 0.5)
                                 if #(targetCoords - GetEntityCoords(hookedVehicle)) < 2.0 then
                                     RegisterBedAttachTarget(flatbed, hookedVehicle)
+                                    hookedVehicle = nil
                                 end
                             end
                             FreezeEntityPosition(flatbed, false)
@@ -119,6 +120,31 @@ local function ShowFlatbedMenu(flatbed)
         }
     })
     lib.showContext('flatbed_control')
+end
+
+local function StartHookScan(flatbed)
+    local hookedTargets = {}
+    CreateThread(function()
+        while hasHook do
+            local nearby = lib.getNearbyVehicles(GetEntityCoords(PlayerPedId()), 15.0, false)
+            for _, data in ipairs(nearby) do
+                if data.vehicle ~= flatbed and not hookedTargets[data.vehicle] then
+                    hookedTargets[data.vehicle] = true
+                    exports.ox_target:addLocalEntity(data.vehicle, {{
+                        name = 'attach_hook',
+                        label = 'Attach Hook',
+                        onSelect = function(targetData) AttachHook(flatbed, data.vehicle, targetData.coords) end,
+                        distance = 3.0,
+                    }})
+                end
+            end
+            Wait(500)
+        end
+        for v in pairs(hookedTargets) do
+            exports.ox_target:removeLocalEntity(v, 'attach_hook')
+        end
+        hookedTargets = {}
+    end)
 end
 
 RegisterNetEvent('nt_tow:openControl')
@@ -161,28 +187,7 @@ function GrabHook(flatbed)
 
     exports.ox_target:removeLocalEntity(flatbed, 'grab_hook')
 
-    local hookedTargets = {}
-    CreateThread(function()
-        while hasHook do
-            local nearby = lib.getNearbyVehicles(GetEntityCoords(PlayerPedId()), 15.0, false)
-            for _, data in ipairs(nearby) do
-                if data.vehicle ~= flatbed and not hookedTargets[data.vehicle] then
-                    hookedTargets[data.vehicle] = true
-                    exports.ox_target:addLocalEntity(data.vehicle, {{
-                        name = 'attach_hook',
-                        label = 'Attach Hook',
-                        onSelect = function(targetData) AttachHook(flatbed, data.vehicle, targetData.coords) end,
-                        distance = 3.0,
-                    }})
-                end
-            end
-            Wait(500)
-        end
-        for v in pairs(hookedTargets) do
-            exports.ox_target:removeLocalEntity(v, 'attach_hook')
-        end
-        hookedTargets = {}
-    end)
+    StartHookScan(flatbed)
 end
 
 function AttachHook(flatbed, vehicle, attachCoords)
@@ -246,29 +251,7 @@ function AttachHook(flatbed, vehicle, attachCoords)
 
             lib.notify({ title = 'Tow Truck', description = 'Return the hook to the truck before raising the bed', type = 'inform' })
 
-            hasHook = true
-            local hookedTargets = {}
-            CreateThread(function()
-                while hasHook do
-                    local nearby = lib.getNearbyVehicles(GetEntityCoords(PlayerPedId()), 15.0, false)
-                    for _, data in ipairs(nearby) do
-                        if data.vehicle ~= flatbed and not hookedTargets[data.vehicle] then
-                            hookedTargets[data.vehicle] = true
-                            exports.ox_target:addLocalEntity(data.vehicle, {{
-                                name = 'attach_hook',
-                                label = 'Attach Hook',
-                                onSelect = function(targetData) AttachHook(flatbed, data.vehicle, targetData.coords) end,
-                                distance = 3.0,
-                            }})
-                        end
-                    end
-                    Wait(500)
-                end
-                for v in pairs(hookedTargets) do
-                    exports.ox_target:removeLocalEntity(v, 'attach_hook')
-                end
-                hookedTargets = {}
-            end)
+            StartHookScan(flatbed)
 
             -- Add return hook target on flatbed
             exports.ox_target:addLocalEntity(flatbed, {{
@@ -355,16 +338,18 @@ function CleanupTow(flatbed)
 
 end
 
-RegisterCommand('bones', function()
-    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-    if vehicle == 0 then return end
-    local names = {'misc_a','misc_b','misc_c','chassis','bodyshell','boot','bumper_r','hook','winch','chain_attach'}
-    for _, name in ipairs(names) do
-        local idx = GetEntityBoneIndexByName(vehicle, name)
-        print(name .. ': ' .. idx)
-    end
-end, false)
+if Config.Debug then
+    RegisterCommand('bones', function()
+        local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+        if vehicle == 0 then return end
+        local names = {'misc_a','misc_b','misc_c','chassis','bodyshell','boot','bumper_r','hook','winch','chain_attach'}
+        for _, name in ipairs(names) do
+            local idx = GetEntityBoneIndexByName(vehicle, name)
+            print(name .. ': ' .. idx)
+        end
+    end, false)
 
-RegisterCommand('cleanup', function ()
-    CleanupTow()
-end, false)
+    RegisterCommand('cleanup', function ()
+        CleanupTow()
+    end, false) 
+end
