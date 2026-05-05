@@ -1,4 +1,43 @@
-# ox_inventory
+# ox_inventory (SD UI Fork)
+
+> **This is a modified fork of [ox_inventory](https://github.com/overextended/ox_inventory) with a completely redesigned UI to match the visual style of sd-crafting.**
+
+If you have any issues or suggestions, feel free to PR, create an issue or join my discord: https://discord.gg/FzPehMQaBQ
+
+## Preview
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3c85e64d-7330-4b7d-a750-08ab925cac9c" />
+
+
+<img width="1920" height="1080" alt="FiveM_GTAProcess_VhzFiz3DF4" src="https://github.com/user-attachments/assets/eb7a1120-3220-474b-bbc7-981bc9e5694c" />
+
+![FiveM_GTAProcess_bBgveoHGWF](https://github.com/user-attachments/assets/c8689320-92ba-4bfa-aa1a-c1eed1f5b44e)
+
+## Works Great With
+
+<img width="3840" height="2160" alt="image_2026-01-05_182906460" src="https://github.com/user-attachments/assets/127eef89-a41d-4fd7-820d-9bb15c28a62f" />
+
+
+Advanced Crafting (Source): https://fivem.samueldev.shop/product/7203651
+
+Advanced Crafting (Encrypted): https://fivem.samueldev.shop/product/7203650
+
+## What's Different
+
+- **Completely redesigned UI** - Modern dark theme matching sd-crafting's visual style
+- **Search functionality** - Filter items by name or label in any inventory
+- **Noise texture overlays** - Subtle noise effects with overlay blend mode for depth
+- **Weight display** - Color-coded weight indicator (green/yellow/red based on capacity)
+- **Item count display** - Shows total item count in inventory header
+- **Improved slot design** - Rounded corners, better spacing, and cleaner item presentation
+- **Hotbar slot numbers** - Clear slot indicators for quick-use items (1-5)
+- **Durability bars** - Color-gradient durability indicators on items
+- **Modern tooltips** - Redesigned item tooltips with better formatting
+- **Item notifications** - Styled popup notifications for item actions (use, give, receive)
+- **Scales with Resolution** - The inventory will always look great regardless of resolution!
+
+> **⚠️ Important:** Download the `ox_inventory.zip` from releases, **not** the source code. The source code does not include the pre-built UI files required for the resource to work.
+
+# Original ox_inventory
 
 A complete inventory system for FiveM, implementing items, weapons, shops, and more without any strict framework dependency.
 
@@ -10,10 +49,6 @@ A complete inventory system for FiveM, implementing items, weapons, shops, and m
 ## 📚 Documentation
 
 https://coxdocs.dev/ox_inventory
-
-## 💾 Download
-
-https://github.com/communityox/ox_inventory/releases/latest/download/ox_inventory.zip
 
 ## Supported frameworks
 

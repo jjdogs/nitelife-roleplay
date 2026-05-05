@@ -1,0 +1,5 @@
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\publish\city_simulation.Server.net.dll
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\publish\city_simulation.Server.deps.json
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\publish\city_simulation.Server.net.pdb
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\publish\CitizenFX.Core.Server.dll
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\publish\Newtonsoft.Json.dll

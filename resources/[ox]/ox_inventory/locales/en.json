@@ -2,6 +2,7 @@
   "ui_use": "Use",
   "ui_give": "Give",
   "ui_close": "Close",
+  "ui_search_items": "Search items...",
   "ui_drop": "Drop",
   "ui_removeattachments": "Remove attachments",
   "ui_copy": "Copy serial number",

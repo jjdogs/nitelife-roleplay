@@ -1,0 +1,11 @@
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\city_simulation.Server.deps.json
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\city_simulation.Server.net.dll
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\bin\Release\netstandard2.0\city_simulation.Server.net.pdb
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.csproj.AssemblyReference.cache
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.GeneratedMSBuildEditorConfig.editorconfig
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.AssemblyInfoInputs.cache
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.AssemblyInfo.cs
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.csproj.CoreCompileInputs.cache
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.sourcelink.json
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.net.dll
+A:\NiteLife\txData\Qbox_B544D5.base\resources\[nt]\city_simulation\Server\obj\Release\netstandard2.0\city_simulation.Server.net.pdb
