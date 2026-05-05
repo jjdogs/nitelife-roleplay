@@ -1,0 +1,10 @@
+RegisterCommand("restartApp", function(source)
+    if source ~= 0 then return end
+    ExecuteCommand("ensure av_laptop")
+    Wait(1000)
+    ExecuteCommand("ensure av_apps")
+    Wait(1000)
+    ExecuteCommand("ensure nt_tow_laptop")
+    Wait(1000)
+    print("av_laptop, av_apps & nt_tow_laptop have been restarted successfully")
+end, false)

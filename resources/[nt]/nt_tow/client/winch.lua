@@ -351,5 +351,22 @@ if Config.Debug then
 
     RegisterCommand('cleanup', function ()
         CleanupTow()
-    end, false) 
+    end, false)
 end
+
+-- Add/remove "Flatbed Controls" target directly on the vehicle when its bed prop is set
+AddStateBagChangeHandler('bedProp', '', function(bagName, _, value)
+    local vehicle = GetEntityFromStateBagName(bagName)
+    if not vehicle or GetEntityModel(vehicle) ~= GetHashKey('flatbed') then return end
+    if not value then
+        exports.ox_target:removeLocalEntity(vehicle, 'flatbed_control')
+        return
+    end
+    exports.ox_target:addLocalEntity(vehicle, {{
+        name     = 'flatbed_control',
+        label    = 'Flatbed Controls',
+        icon     = 'fas fa-truck',
+        onSelect = function() TriggerEvent('nt_tow:openControl') end,
+        distance = 4.0,
+    }})
+end)

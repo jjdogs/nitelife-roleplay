@@ -19,6 +19,19 @@ Config.ContactPed = {
     scenario = 'WORLD_HUMAN_AA_SMOKE',
 }
 
+-- x, y, z offset on the bed prop where the Flatbed Controls target appears
+Config.FlatbedControlsOffset = { 0.0, 2.0, 0.3 }
+
+Config.DropoffCoords = vector4(488.94, -1332.43, 29.33, 303.46)
+Config.DropoffAlignThreshold = { distance = 3.0, heading = 15.0 }
+
+Config.BreakdownSpots = {
+    vector4(-679.39, -951.30, 20.73,  88.89),
+    vector4(-601.51, -669.19, 31.70,  91.34),
+    vector4(-440.87, -539.84, 25.12, 261.73),
+    vector4( -13.26, -740.29, 44.17,  64.80),
+}
+
 Config.TargetOptions = {
     distance = 2.5,
     options = {
@@ -36,10 +49,10 @@ Config.TargetOptions = {
                     options = {
                         {
                             id = 'start_job',
-                            label = 'Start Towing',
+                            label = 'Join Queue',
                             icon = 'truck',
                             description = 'Get a tow assignment.',
-                            -- clientEvent = 'nt_tow:startJob',
+                            clientEvent = 'nt_tow:startJob',
                         },
                     },
                 })

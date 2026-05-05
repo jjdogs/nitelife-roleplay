@@ -1,0 +1,2 @@
+-- NUI callbacks are registered in nt_tow/client/job.lua
+-- where activeJob state is in scope.
